@@ -283,4 +283,51 @@ results/
 | **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | ✅ Complete |
-| **Synthesis & UI** | **Deliverable** | **Master Dashboard** | ⏳ **Next / Final Core Deliverable** |
+| **Synthesis & UI** | **Deliverable** | **Master Dashboard** | ✅ Complete |
+
+---
+
+## Master Dashboard
+
+The **ChainC2 Sentinel Master Dashboard** serves as the integrated research interface for the framework. Built specifically for an offline, local laboratory environment, it visualizes the cross-layer correlation and defensive response pipelines without any external CDN or runtime cloud dependencies.
+
+### Architecture
+- **Backend:** Flask web service and REST API (`src/dashboard/app.py`, `src/dashboard/run.py`).
+- **Data Services:**
+  - `BenchmarkService`: Aggregates authoritative detection metrics (`evaluation_results.json`) and protection evaluations (`protection_evaluation.json`).
+  - `ExperimentService`: Manages laboratory scenario execution, concurrency locking, and live telemetry streaming.
+  - `EvidenceService`: Discovers forensic evidence snapshots and performs real-time SHA-256 integrity verification.
+  - `ReportService`: Safely serves whitelisted research analysis reports with strict path-traversal defenses.
+- **Frontend:** Pure vanilla HTML, CSS, and ES6 JavaScript (`src/dashboard/static/`, `src/dashboard/templates/`). Native SVG, Canvas, and CSS visualizers are used for all charts, gauges, timelines, and confusion matrices.
+
+### Starting the Dashboard
+Run the dashboard server locally from the repository root:
+```bash
+python -m src.dashboard.run
+```
+Optional arguments:
+- `--host 127.0.0.1`: Binding interface (strictly localhost by default for safety).
+- `--port 5000`: Port number (default: 5000).
+
+Once launched, navigate to:
+```
+http://127.0.0.1:5000/
+```
+
+### Dashboard Sections
+The dashboard is structured into 10 single-page application (SPA) sections:
+1. **Overview:** High-level system operational status, authoritative pipeline sequence, and headline detection & protection benchmark metrics.
+2. **Experiment Center:** Interactive controls for executing Scenario A (Benign), Scenario B (Synthetic C2), Scenario C (Legitimate DApp), or **Run All 3** with real-time laboratory console logs.
+3. **Live Telemetry:** Chronological multi-layer event stream (Endpoint, RPC, Blockchain, Network) with clear visual distinction between active on-demand and historical benchmark events.
+4. **Correlation View:** Visual causal timeline illustrating the 4-stage cross-layer transition sequence (Endpoint → RPC → Blockchain → Network) with computed inter-layer delta times ($\Delta t$).
+5. **Detection & Scoring:** Dynamic score meter (0–100, threshold 80) and breakdown of weighted rule score contributions (+10, +10, +15, +20, +20, +25).
+6. **Phase 2 Protection:** Complete defensive response pipeline (Detection → Plan → Response → Verification → Audit → Rollback) and comparative mitigation metrics.
+7. **Evaluation Metrics:** Empirical 2x2 confusion matrix ($TP=10, TN=20, FP=0, FN=0$), benchmark scenario distribution, and detection latency analysis.
+8. **Experiment History:** Searchable and filterable audit log of all benchmark and on-demand experiment executions with one-click multi-layer chain inspection.
+9. **Evidence Explorer:** Inspection table for preserved forensic evidence snapshots with a live, cryptographic **Verify SHA-256** integrity check.
+10. **Research & Reports:** Core research question evaluation, differentiation logic across Scenarios A/B/C, safe markdown report viewer, and whitelisted artifact download center.
+
+### Safe Experiment Execution & Isolation Guarantee
+- **Server-Side Concurrency Lock:** Prevents simultaneous scenario runs; concurrent requests are safely rejected with HTTP 409.
+- **Run All 3 Isolation:** When executing "Run All 3", Scenarios A, B, and C are run as three strictly independent experiments. Each receives a unique `run_id`, separate telemetry log, and independent correlation graph. Cross-run telemetry leakage is strictly prevented.
+- **Strict Safety Boundaries:** Controls only accept categorical scenario selectors (A, B, C). No arbitrary shell execution, PID manipulation, or external network access is permitted.

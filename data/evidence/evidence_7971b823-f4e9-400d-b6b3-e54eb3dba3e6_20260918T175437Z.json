@@ -1,0 +1,18 @@
+{
+  "evidence_bundle_id": "77c1b472-b675-4cfd-acc4-473fa1bef80d",
+  "preserved_at": "2026-09-18T17:54:37.527879+00:00",
+  "correlation_id": "7971b823-f4e9-400d-b6b3-e54eb3dba3e6",
+  "run_id": "run-aae1da79-80d4-4bf6-a8ab-d00a0d9ee258",
+  "rule_id": "RULE-CHAINC2-001",
+  "matched_conditions": [
+    "cond_endpoint",
+    "cond_rpc",
+    "cond_blockchain",
+    "cond_c2datastore",
+    "cond_network",
+    "cond_network_timing",
+    "cond_causal_timeline"
+  ],
+  "action_id": "ebf2639d-7cf8-4376-b1f7-c80e71892f85",
+  "sha256_checksum": "3b9cd89ce24dec06874fa32c2cdb7f24d2ac036cd9366196bea77524d64d3440"
+}
