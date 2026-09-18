@@ -196,6 +196,8 @@ tests/                   # Python unit tests (collectors, correlation, detection
 docs/                    # Architecture documentation, development plan
 data/
 └── evaluation/          # Machine-readable evaluation reports (JSON)
+results/
+└── detection/           # Processed research artifacts (summary JSON, metrics CSV, experiment history CSV)
 ```
 
 ---
@@ -204,7 +206,7 @@ data/
 
 | Test Suite / Benchmark | Metric / Count | Result | Status |
 |:---|:---:|:---:|:---:|
-| Python Unit Tests (all modules) | 127 tests | 100% passing (7.49s) | ✅ Passing |
+| Python Unit Tests (all modules) | 132 tests | 100% passing (6.94s) | ✅ Passing |
 | Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (846ms) | ✅ Passing |
 | Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN]$) | ✅ Measured |
 | Scenario A False-Positive Rate | 10 negative runs | 0.0% ($FP / [FP+TN]$) | ✅ Measured |

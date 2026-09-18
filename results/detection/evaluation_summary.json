@@ -1,0 +1,41 @@
+{
+  "evaluation_id": "eval-53e4910d-a742-46fc-8188-3b6eb7c5f566",
+  "created_at": "2026-09-18T15:09:53.336884Z",
+  "rule_id": "RULE-CHAINC2-001",
+  "rule_version": "1.0.0",
+  "scenario_counts": {
+    "scenario_a_benign": 10,
+    "scenario_b_synthetic_c2": 10
+  },
+  "total_experiments": 20,
+  "successful_runs": 20,
+  "failed_runs": 0,
+  "experiment_success_rate": 1.0,
+  "true_positives": 10,
+  "true_negatives": 10,
+  "false_positives": 0,
+  "false_negatives": 0,
+  "ground_truth_positives": 10,
+  "ground_truth_negatives": 10,
+  "detection_rate": 1.0,
+  "false_positive_rate": 0.0,
+  "precision": 1.0,
+  "true_negative_rate": 1.0,
+  "accuracy": 1.0,
+  "f1_score": 1.0,
+  "detection_latency": {
+    "average_ms": 0.048005000280682,
+    "min_ms": 0.025200002710334957,
+    "max_ms": 0.09180000051856041
+  },
+  "metric_formulas": {
+    "detection_rate": "TP / (TP + FN) [Denominator: Ground Truth Positives]",
+    "false_positive_rate": "FP / (FP + TN) [Denominator: Ground Truth Negatives]",
+    "precision": "TP / (TP + FP) [Denominator: All Triggered Detections]",
+    "true_negative_rate": "TN / (TN + FP) [Denominator: Ground Truth Negatives]",
+    "accuracy": "(TP + TN) / total_experiments [Denominator: Total Experiments]",
+    "f1_score": "2 * (Precision * Recall) / (Precision + Recall)",
+    "experiment_success_rate": "successful_runs / total_experiments"
+  },
+  "research_limitation": "Laboratory evaluation result only. Measures detectability of predefined synthetic C2-like behavioral sequences under controlled conditions. Does not assert real-world malware detection capabilities, threat actor attribution, or universal blockchain security efficacy."
+}

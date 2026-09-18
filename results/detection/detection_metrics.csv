@@ -1,0 +1,20 @@
+metric_name,value,unit,description_or_formula
+total_experiments,20,count,Total evaluated scenario runs
+successful_runs,20,count,Successful executions without error
+failed_runs,0,count,Failed executions
+experiment_success_rate,1.0,ratio,successful_runs / total_experiments
+ground_truth_positives,10,count,TP + FN (Scenario B)
+ground_truth_negatives,10,count,TN + FP (Scenario A)
+true_positives,10,count,Synthetic C2 correctly triggered
+true_negatives,10,count,Benign control correctly not triggered
+false_positives,0,count,Benign control erroneously triggered
+false_negatives,0,count,Synthetic C2 missed
+detection_rate,1.0,rate,TP / (TP + FN) [Recall/Sensitivity]
+false_positive_rate,0.0,rate,FP / (FP + TN) [Fall-out]
+precision,1.0,rate,TP / (TP + FP) [Positive Predictive Value]
+true_negative_rate,1.0,rate,TN / (TN + FP) [Specificity]
+accuracy,1.0,rate,(TP + TN) / total_experiments
+f1_score,1.0,score,2 * (Precision * Recall) / (Precision + Recall)
+average_detection_latency_ms,0.048005000280682,ms,Mean detection processing duration
+min_detection_latency_ms,0.025200002710334957,ms,Minimum detection processing duration
+max_detection_latency_ms,0.09180000051856041,ms,Maximum detection processing duration

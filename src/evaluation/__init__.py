@@ -2,6 +2,7 @@
 """Evaluation framework for Milestone 7 — Detection Evaluation."""
 
 from src.evaluation.evaluator import DetectionEvaluator
+from src.evaluation.exporter import export_results_artifacts
 from src.evaluation.models import (
     AggregateEvaluationResult,
     ClassificationVerdict,
@@ -17,4 +18,5 @@ __all__ = [
     "EvaluationMetrics",
     "AggregateEvaluationResult",
     "DetectionEvaluator",
+    "export_results_artifacts",
 ]
