@@ -216,3 +216,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# ChainC2 Sentinel — Phase 1 additions
+# ============================================================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Hardhat
+src/blockchain/artifacts/
+src/blockchain/cache/
+src/blockchain/typechain-types/
+
+# Docker
+docker-compose.override.yml
+
+# Environment files (keep .env.example, ignore .env)
+.env
+
+# Telemetry output data (generated at runtime)
+data/telemetry/*
+!data/telemetry/.gitkeep
+
+# Contract deployment artifacts (shared volume output)
+contract-artifacts/
+deployed-addresses.json

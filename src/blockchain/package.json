@@ -1,0 +1,20 @@
+{
+  "name": "chainc2-sentinel-blockchain",
+  "version": "0.1.0",
+  "description": "ChainC2 Sentinel — Local Hardhat EVM environment with test contracts",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node --hostname 0.0.0.0",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat_docker"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

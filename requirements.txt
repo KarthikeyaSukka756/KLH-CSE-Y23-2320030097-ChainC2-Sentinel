@@ -1,0 +1,31 @@
+# ChainC2 Sentinel — Python Dependencies (Phase 1)
+# Controlled Laboratory & Telemetry
+#
+# INSTALL NOTES:
+# - Full install (Docker / Linux):  pip install -r requirements.txt
+# - Local dev (Windows, no MSVC):   pip install -r requirements.txt --no-deps web3
+#   then: pip install pydantic flask aiohttp pytest pytest-asyncio python-dotenv requests
+#
+# web3 has C-extension dependencies (ckzg, lru-dict) that require a C compiler.
+# Inside Docker (Linux), these install from pre-built wheels.
+# On Windows without MSVC Build Tools, install the dev subset instead (see above).
+
+# Blockchain interaction (requires C compiler for native deps — use Docker)
+web3>=6.0,<7.0
+
+# HTTP target server
+flask>=3.0,<4.0
+
+# HTTP proxy (RPC proxy — async)
+aiohttp>=3.9,<4.0
+
+# Data validation and schema
+pydantic>=2.0,<3.0
+
+# Testing
+pytest>=8.0,<9.0
+pytest-asyncio>=0.23,<1.0
+
+# Utilities
+python-dotenv>=1.0,<2.0
+requests>=2.31,<3.0
