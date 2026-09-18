@@ -1,0 +1,20 @@
+metric_name,value,unit,description
+total_experiments,22,count,Total evaluated protection experiments
+successful_experiments,22,count,Successful runs meeting all criteria
+failed_experiments,0,count,Failed runs
+experiment_success_rate,1.0,ratio,successful_experiments / total_experiments
+scenario_a_runs,10,count,Benign negative control runs
+scenario_b_runs,10,count,Synthetic C2 positive control runs
+fault_injection_runs,2,count,Fault injection negative control runs
+mitigation_success_rate,1.0,ratio,verified_actions / requested_actions (triggered)
+rpc_blocking_rate,1.0,ratio,verified_rpc_blocks / runs_with_rpc_filter
+beacon_blocking_rate,1.0,ratio,verified_beacon_blocks / runs_with_net_containment
+process_isolation_success_rate,1.0,ratio,verified_isolations / runs_with_isolation
+legitimate_traffic_preservation_rate,1.0,ratio,runs_preserving_legitimate / total
+false_mitigation_rate,0.0,ratio,benign_runs_with_mitigation / total_scenario_a
+rollback_success_rate,1.0,ratio,successful_rollbacks / attempted_rollbacks
+evidence_preservation_rate,1.0,ratio,verified_evidence / total_triggered_runs
+containment_latency_min_ms,1.49,ms,Minimum containment latency
+containment_latency_max_ms,3.564,ms,Maximum containment latency
+containment_latency_avg_ms,2.091,ms,Average containment latency
+containment_latency_median_ms,1.755,ms,Median containment latency

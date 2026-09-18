@@ -157,7 +157,20 @@ All blockchain activity is local and synthetic. No public blockchains are used.
   - `NetworkContainmentHandler`: Application-layer containment on `LocalHttpTargetServer` rejecting synthetic `/beacon` requests with HTTP 403 while preserving `/health`
   - `ProcessIsolationHandler`: Cooperative laboratory scenario worker isolation via `ScenarioWorkerRegistry`, strictly refusing arbitrary host process termination
   - `EvidenceSnapshotHandler`: Immutable forensic evidence bundle generation under `data/evidence/` with SHA-256 integrity checksums
-- `DefenseExecutor`: Deterministic executor managing full action lifecycle (`REQUESTED` → `EXECUTED` → `VERIFIED`/`FAILED`), automated post-action verification, and comprehensive rollback
+#### Milestone 10 — Protection Evaluation
+- `ProtectionEvaluator` — configurable experimental orchestrator evaluating defensive responses across repeated runs
+- Structured evaluation models: `ProtectionExperimentRecord`, `ProtectionEvaluationMetrics`, and `AggregateProtectionEvaluationResult`
+- Measured dimensions across 22 controlled laboratory experiments (10 Benign Scenario A, 10 Synthetic C2 Scenario B, 2 Fault Injection):
+  - **Mitigation Success Rate:** 100.0% ($40/40$ actions verified across positive control runs)
+  - **RPC Blocking Rate:** 100.0% ($10/10$ synthetic C2DataStore queries blocked)
+  - **Beacon Blocking Rate:** 100.0% ($10/10$ synthetic beacon requests rejected with HTTP 403)
+  - **Process Isolation Success Rate:** 100.0% ($10/10$ registered scenario workers cooperatively contained)
+  - **Legitimate Traffic Preservation:** 100.0% ($22/22$ runs maintained benign dApp and /health availability)
+  - **False Mitigation Rate:** 0.0% ($0/10$ benign Scenario A runs received mitigation)
+  - **Rollback Success Rate:** 100.0% ($10/10$ rollbacks verified baseline restoration)
+  - **Evidence Preservation Rate:** 100.0% ($10/10$ positive control runs generated valid SHA-256 evidence bundles)
+  - **Containment Latency:** 2.09ms avg (min: 1.49ms, max: 3.56ms)
+- Machine-readable raw dataset persisted at `data/evaluation/protection_evaluation.json` and processed research artifacts in `results/protection/`
 
 ---
 
@@ -172,11 +185,12 @@ src/
 ├── collectors/          # Telemetry collectors (endpoint, RPC, blockchain, network)
 ├── correlation/         # Cross-layer correlation engine, sequence & transition models
 ├── detection/           # Explainable rule-based detection engine, rules, and result models
-├── evaluation/          # Experimental evaluation orchestrator, metrics, and report models
+├── evaluation/          # Experimental detection evaluation orchestrator, metrics, and report models
 ├── http_target/         # Controlled local HTTP target server (127.0.0.1)
 ├── models/              # SentinelEvent Pydantic v2 schema and sub-models
 ├── normalizer/          # Event normalizer and JSONL persistence
 ├── protection/          # Phase 2 Defensive response & mitigation framework
+│   ├── evaluation/      # Protection evaluation orchestrator, metrics models, and artifact exporter
 │   ├── handlers/        # Concrete mitigation handlers (RPC, network, process, evidence)
 │   ├── executor.py      # DefenseExecutor orchestrator with verification & rollback
 │   ├── interfaces.py    # Abstract responder contracts (BaseMitigationHandler, BaseEvidencePreserver)
@@ -189,13 +203,14 @@ src/
 │   ├── payload.py       # Safe inert C2 payload schema and validator
 │   └── runner.py        # Scenario execution orchestrator
 └── utils/               # UUID generation, structured logging
-tests/                   # Python unit tests (145 tests covering collectors, correlation, detection, evaluation, protection, scenarios)
+tests/                   # Python unit tests (154 tests covering collectors, correlation, detection, evaluation, protection, scenarios)
 docs/                    # Architecture documentation, development plan, defensive response specification
 data/
-├── evaluation/          # Machine-readable evaluation reports (JSON)
+├── evaluation/          # Machine-readable evaluation reports (detection & protection JSON)
 └── evidence/            # Preserved immutable forensic evidence snapshots (JSON)
 results/
-└── detection/           # Processed research artifacts (summary JSON, metrics CSV, experiment history CSV)
+├── detection/           # Processed detection research artifacts (summary JSON, metrics CSV, experiment history CSV)
+└── protection/          # Processed protection research artifacts (summary JSON, metrics CSV, experiment history CSV)
 ```
 
 ---
@@ -204,12 +219,20 @@ results/
 
 | Test Suite / Benchmark | Metric / Count | Result | Status |
 |:---|:---:|:---:|:---:|
-| Python Unit Tests (all modules) | 145 tests | 100% passing (7.72s) | ✅ Passing |
-| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (3s) | ✅ Passing |
+| Python Unit Tests (all modules) | 154 tests | 100% passing (11.02s) | ✅ Passing |
+| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (855ms) | ✅ Passing |
 | Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN]$) | ✅ Measured |
 | Scenario A False-Positive Rate | 10 negative runs | 0.0% ($FP / [FP+TN]$) | ✅ Measured |
 | Detection Precision | 10 triggered runs | 100.0% ($TP / [TP+FP]$) | ✅ Measured |
 | Detection Processing Latency | 20 evaluated runs | ~0.048ms avg (min: 0.025ms, max: 0.092ms) | ✅ Measured |
+| Mitigation Success Rate | 10 positive runs (40 actions) | 100.0% ($40/40$ verified) | ✅ Measured |
+| RPC Blocking Rate | 10 positive runs | 100.0% ($10/10$ blocked) | ✅ Measured |
+| Beacon Blocking Rate | 10 positive runs | 100.0% ($10/10$ rejected HTTP 403) | ✅ Measured |
+| Process Isolation Success Rate | 10 positive runs | 100.0% ($10/10$ isolated) | ✅ Measured |
+| False Mitigation Rate | 10 negative runs | 0.0% ($0/10$ mitigated) | ✅ Measured |
+| Legitimate Traffic Preservation | 22 evaluated runs | 100.0% ($22/22$ preserved) | ✅ Measured |
+| Rollback Success Rate | 10 positive runs | 100.0% ($10/10$ restored) | ✅ Measured |
+| Containment Latency | 10 evaluated runs | ~2.09ms avg (min: 1.49ms, max: 3.56ms) | ✅ Measured |
 
 *Note: The above metrics represent empirical laboratory evaluation on controlled synthetic scenarios. They quantify detectability and response in our controlled environment and do not assert real-world malware efficacy.*
 
@@ -217,8 +240,8 @@ results/
 
 ## Project Status
 
-**Current Research Phase:** Phase 2 — Protection (Milestones 8 & 9 Complete)  
-**Next Research Target:** Phase 2 — Protection, Milestone 10 — Protection Evaluation  
+**Current Research Phase:** Phase 2 — Protection (Milestones 8, 9, & 10 Complete)  
+**Next Research Target:** Phase 2 — Protection, Milestone 11 — Final Research Analysis  
 
 | Research Phase | Milestone | Focus Area | Status |
 |:---|:---|:---|:---|
@@ -231,5 +254,5 @@ results/
 | **Phase 1 — Detection** | Milestone 7 | Detection Evaluation | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | ✅ Complete |
-| **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ⏳ Next Target |
-| **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | 🔮 Future Research Phase |
+| **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ✅ Complete |
+| **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | ⏳ Next Target |

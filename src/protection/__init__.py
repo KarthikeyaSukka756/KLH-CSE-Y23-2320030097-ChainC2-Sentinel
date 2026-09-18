@@ -23,6 +23,14 @@ from src.protection.process_registry import (
     get_worker_registry,
 )
 
+from src.protection.evaluation import (
+    AggregateProtectionEvaluationResult,
+    ProtectionEvaluationMetrics,
+    ProtectionEvaluator,
+    ProtectionExperimentRecord,
+    export_protection_results_artifacts,
+)
+
 __all__ = [
     "MitigationType",
     "MitigationStatus",
@@ -40,4 +48,9 @@ __all__ = [
     "EvidenceSnapshotHandler",
     "ScenarioWorkerRegistry",
     "get_worker_registry",
+    "ProtectionExperimentRecord",
+    "ProtectionEvaluationMetrics",
+    "AggregateProtectionEvaluationResult",
+    "ProtectionEvaluator",
+    "export_protection_results_artifacts",
 ]
