@@ -173,11 +173,11 @@ Phase 2 includes:
 | **Phase 1** | **Milestone 1** | Project Infrastructure | ✅ **COMPLETE** |
 | **Phase 1** | **Milestone 2** | Synthetic Blockchain Environment | ✅ **COMPLETE** |
 | **Phase 1** | **Milestone 3** | Telemetry Foundation | ✅ **COMPLETE** |
-| **Phase 1** | **Milestone 4** | Controlled Detection Scenarios | ⏳ **NOT YET IMPLEMENTED** |
-| **Phase 1** | **Milestone 5** | Cross-Layer Correlation | ⏳ **NOT YET IMPLEMENTED** |
-| **Phase 1** | **Milestone 6** | Detection | ⏳ **NOT YET IMPLEMENTED** |
-| **Phase 1** | **Milestone 7** | Detection Evaluation | ⏳ **NOT YET IMPLEMENTED** |
-| **Phase 2** | **Milestone 8** | Defensive Response Design | 🔮 **FUTURE** |
+| **Phase 1** | **Milestone 4** | Controlled Detection Scenarios | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 5** | Cross-Layer Correlation | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 6** | Detection | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 7** | Detection Evaluation | ✅ **COMPLETE** |
+| **Phase 2** | **Milestone 8** | Defensive Response Design | ⏳ **NEXT TARGET** |
 | **Phase 2** | **Milestone 9** | Controlled Protection / Mitigation | 🔮 **FUTURE** |
 | **Phase 2** | **Milestone 10** | Protection Evaluation | 🔮 **FUTURE** |
 | **Phase 2** | **Milestone 11** | Final Research Analysis | 🔮 **FUTURE** |
@@ -190,16 +190,35 @@ Phase 2 includes:
 - **Collectors:** 4 modular collectors (`endpoint`, `rpc`, `blockchain`, `network`)
 - **RPC Telemetry Proxy:** aiohttp proxy capturing JSON-RPC telemetry between client and Hardhat node
 - **Normalization & Persistence:** `EventNormalizer` and JSONL `EventStore`
+- **Controlled Laboratory Scenarios:**
+  - `LocalHttpTargetServer` strictly bound to 127.0.0.1 with audit logging
+  - `SyntheticC2Payload` safe inert configuration model and validator
+  - `BenignWeb3Scenario` (Scenario A) — legitimate Web3 activity baseline with zero network follow-up
+  - `SyntheticC2Scenario` (Scenario B) — synthetic blockchain-mediated C2-like behavior with local beaconing
+  - `ScenarioRunner` orchestrator and reporting
+- **Cross-Layer Correlation Engine:**
+  - `CorrelatedSequence` & `EventTransition` models capturing evidence chains and layer transitions
+  - `CrossLayerCorrelationEngine` reconstructing multi-stage causality with temporal ordering and delta-time calculations
+- **Explainable Rule-Based Detection Layer:**
+  - `SyntheticC2SequenceRule` evaluating 7 observable conditions across multi-layer evidence chains
+  - `DetectionEngine` orchestrating rule evaluations with factual, transparent explanations
+  - `DetectionResult` capturing matched/unmatched conditions and observable evidence
+- **Detection Evaluation Framework (Milestone 7):**
+  - `DetectionEvaluator` orchestrating repeated scenario experiments and computing deterministic statistical metrics
+  - Structured models: `ExperimentRecord`, `EvaluationMetrics`, and `AggregateEvaluationResult`
+  - Safe zero-denominator handling for all derived metrics
+  - Machine-readable persistence (`data/evaluation/evaluation_results.json`)
+  - Empirical 20-run benchmark: 100% detection rate, 0.0% false-positive rate, ~0.048ms average detection latency
 - **Test Suites:**
-  - Python unit tests: **88 passing**
+  - Python unit tests: **127 passing**
   - Hardhat contract tests: **26 passing**
 
 ### Next Implementation Target
 
-**Phase 1, Milestone 4 — Controlled Detection Scenarios:**
-- Implement controlled test scenarios simulating legitimate Web3 baseline interactions.
-- Implement controlled synthetic scenarios simulating blockchain-mediated C2-like data retrieval and subsequent local network connections.
-- Ensure all activity is confined to the local laboratory environment without connecting to public networks.
+**Phase 2 — Protection, Milestone 8 — Defensive Response Design:**
+- Transition from Phase 1 (Detection) to Phase 2 (Protection).
+- Design safe, explainable defensive response options mapped to detected cross-layer evidence.
+- Establish response boundaries and safety constraints for controlled laboratory execution.
 
 ---
 

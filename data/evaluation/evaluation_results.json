@@ -1,0 +1,2313 @@
+{
+  "evaluation_id": "eval-53e4910d-a742-46fc-8188-3b6eb7c5f566",
+  "created_at": "2026-09-18T15:09:53.336884Z",
+  "rule_id": "RULE-CHAINC2-001",
+  "rule_version": "1.0.0",
+  "scenario_counts": {
+    "scenario_a_benign": 10,
+    "scenario_b_synthetic_c2": 10
+  },
+  "metrics": {
+    "total_experiments": 20,
+    "successful_runs": 20,
+    "failed_runs": 0,
+    "experiment_success_rate": 1.0,
+    "ground_truth_positives": 10,
+    "ground_truth_negatives": 10,
+    "true_positives": 10,
+    "true_negatives": 10,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "detection_rate": 1.0,
+    "false_positive_rate": 0.0,
+    "precision": 1.0,
+    "true_negative_rate": 1.0,
+    "accuracy": 1.0,
+    "f1_score": 1.0,
+    "average_detection_latency_ms": 0.048005000280682,
+    "min_detection_latency_ms": 0.025200002710334957,
+    "max_detection_latency_ms": 0.09180000051856041,
+    "metric_formulas": {
+      "detection_rate": "TP / (TP + FN) [Denominator: Ground Truth Positives]",
+      "false_positive_rate": "FP / (FP + TN) [Denominator: Ground Truth Negatives]",
+      "precision": "TP / (TP + FP) [Denominator: All Triggered Detections]",
+      "true_negative_rate": "TN / (TN + FP) [Denominator: Ground Truth Negatives]",
+      "accuracy": "(TP + TN) / total_experiments [Denominator: Total Experiments]",
+      "f1_score": "2 * (Precision * Recall) / (Precision + Recall)",
+      "experiment_success_rate": "successful_runs / total_experiments"
+    }
+  },
+  "experiments": [
+    {
+      "experiment_id": "exp-04a8b7bd-0b13-4ee7-b093-a2a78c0a14b6",
+      "run_id": "eval-benign-001-run-a0950826-407f-47cb-a229-0e9f7be2d9c5",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "504ffd12-795b-4156-8f1c-e4382e598bff",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.06299999949987978,
+      "timestamp_start": "2026-09-18T15:09:52.674605Z",
+      "timestamp_end": "2026-09-18T15:09:52.675256Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "504ffd12-795b-4156-8f1c-e4382e598bff",
+        "run_id": "eval-benign-001-run-a0950826-407f-47cb-a229-0e9f7be2d9c5",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "504ffd12-795b-4156-8f1c-e4382e598bff",
+          "run_id": "eval-benign-001-run-a0950826-407f-47cb-a229-0e9f7be2d9c5",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.09,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.675245Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-34e48cb2-5a59-406e-bb88-1610dade114e",
+      "run_id": "eval-benign-002-run-068e7d1b-f8d6-40d7-805d-3f515a1dec89",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "83d9e05a-3c8f-4784-9d24-171d2899dd85",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.04550000448944047,
+      "timestamp_start": "2026-09-18T15:09:52.675292Z",
+      "timestamp_end": "2026-09-18T15:09:52.675514Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "83d9e05a-3c8f-4784-9d24-171d2899dd85",
+        "run_id": "eval-benign-002-run-068e7d1b-f8d6-40d7-805d-3f515a1dec89",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "83d9e05a-3c8f-4784-9d24-171d2899dd85",
+          "run_id": "eval-benign-002-run-068e7d1b-f8d6-40d7-805d-3f515a1dec89",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.038,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.675507Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-ea0061ab-1127-4cdb-a72f-3647cf8fbd82",
+      "run_id": "eval-benign-003-run-aef64bcc-0eb2-45c5-933f-ebf2e1f69d0e",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "4cfe1e67-4162-44d6-ab77-bb9c0443fc64",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.029800001357216388,
+      "timestamp_start": "2026-09-18T15:09:52.675539Z",
+      "timestamp_end": "2026-09-18T15:09:52.675673Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "4cfe1e67-4162-44d6-ab77-bb9c0443fc64",
+        "run_id": "eval-benign-003-run-aef64bcc-0eb2-45c5-933f-ebf2e1f69d0e",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "4cfe1e67-4162-44d6-ab77-bb9c0443fc64",
+          "run_id": "eval-benign-003-run-aef64bcc-0eb2-45c5-933f-ebf2e1f69d0e",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.031,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.675669Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-f236946d-5eab-4f4c-a354-a593bb4945c4",
+      "run_id": "eval-benign-004-run-5e3c5865-1559-4ed5-a1f4-7bc9b95765fd",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "ddac2a7a-e0ae-4da5-a779-0ab6e4ddcbfd",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.03029999788850546,
+      "timestamp_start": "2026-09-18T15:09:52.675692Z",
+      "timestamp_end": "2026-09-18T15:09:52.675810Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "ddac2a7a-e0ae-4da5-a779-0ab6e4ddcbfd",
+        "run_id": "eval-benign-004-run-5e3c5865-1559-4ed5-a1f4-7bc9b95765fd",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "ddac2a7a-e0ae-4da5-a779-0ab6e4ddcbfd",
+          "run_id": "eval-benign-004-run-5e3c5865-1559-4ed5-a1f4-7bc9b95765fd",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.027,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.675806Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-2384bf25-c0e8-43a9-996c-d62da26cd02d",
+      "run_id": "eval-benign-005-run-238070e7-3185-48e5-bacb-814df16147c2",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "68231210-f5c7-46fe-99cc-c2cd7dae45ca",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.0259000007645227,
+      "timestamp_start": "2026-09-18T15:09:52.675826Z",
+      "timestamp_end": "2026-09-18T15:09:52.675935Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "68231210-f5c7-46fe-99cc-c2cd7dae45ca",
+        "run_id": "eval-benign-005-run-238070e7-3185-48e5-bacb-814df16147c2",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "68231210-f5c7-46fe-99cc-c2cd7dae45ca",
+          "run_id": "eval-benign-005-run-238070e7-3185-48e5-bacb-814df16147c2",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.024,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.675932Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-16630b1a-5ba9-4ecc-91bf-80a2105ef050",
+      "run_id": "eval-benign-006-run-f371c4eb-7d3d-4d7b-96f7-4ea66d2d3948",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "87989659-93aa-4954-aaeb-99e323613784",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.02890000178012997,
+      "timestamp_start": "2026-09-18T15:09:52.675952Z",
+      "timestamp_end": "2026-09-18T15:09:52.676070Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "87989659-93aa-4954-aaeb-99e323613784",
+        "run_id": "eval-benign-006-run-f371c4eb-7d3d-4d7b-96f7-4ea66d2d3948",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "87989659-93aa-4954-aaeb-99e323613784",
+          "run_id": "eval-benign-006-run-f371c4eb-7d3d-4d7b-96f7-4ea66d2d3948",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.021,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.676064Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-8ef6d4fd-0282-44e6-9278-ee949993a6ae",
+      "run_id": "eval-benign-007-run-6fb15a0b-936e-440f-9f1d-22414c6c8627",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "30df77e8-e710-4a23-95ac-3aa7f7d17e10",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.026299996534362435,
+      "timestamp_start": "2026-09-18T15:09:52.676085Z",
+      "timestamp_end": "2026-09-18T15:09:52.676189Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "30df77e8-e710-4a23-95ac-3aa7f7d17e10",
+        "run_id": "eval-benign-007-run-6fb15a0b-936e-440f-9f1d-22414c6c8627",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "30df77e8-e710-4a23-95ac-3aa7f7d17e10",
+          "run_id": "eval-benign-007-run-6fb15a0b-936e-440f-9f1d-22414c6c8627",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.022,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.676185Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-7b67dfa9-011a-4b1f-b8a9-984cb9d5f239",
+      "run_id": "eval-benign-008-run-4a942f34-bc14-4a7c-8f74-2db86daaa95d",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "28ec9f11-86b1-43bb-8382-44437b2f70d2",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.025200002710334957,
+      "timestamp_start": "2026-09-18T15:09:52.676203Z",
+      "timestamp_end": "2026-09-18T15:09:52.676304Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "28ec9f11-86b1-43bb-8382-44437b2f70d2",
+        "run_id": "eval-benign-008-run-4a942f34-bc14-4a7c-8f74-2db86daaa95d",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "28ec9f11-86b1-43bb-8382-44437b2f70d2",
+          "run_id": "eval-benign-008-run-4a942f34-bc14-4a7c-8f74-2db86daaa95d",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.023,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.676301Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-14d5e72c-293e-4fce-b2d8-f4d3072f58f5",
+      "run_id": "eval-benign-009-run-01fe15ca-1ada-4622-9b98-aefbfebc474a",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "58176b13-1748-4a9d-ac02-212228e5c615",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.025200002710334957,
+      "timestamp_start": "2026-09-18T15:09:52.676319Z",
+      "timestamp_end": "2026-09-18T15:09:52.676418Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "58176b13-1748-4a9d-ac02-212228e5c615",
+        "run_id": "eval-benign-009-run-01fe15ca-1ada-4622-9b98-aefbfebc474a",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "58176b13-1748-4a9d-ac02-212228e5c615",
+          "run_id": "eval-benign-009-run-01fe15ca-1ada-4622-9b98-aefbfebc474a",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.02,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.676415Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-2fc07614-d259-409e-8377-067badf4a640",
+      "run_id": "eval-benign-010-run-a9673c79-b0cf-4ec6-ba60-54ea3839d1b7",
+      "scenario_id": "scenario_a_benign",
+      "ground_truth": "benign",
+      "execution_status": "SUCCESS",
+      "total_events": 3,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain"
+      ],
+      "correlated_sequence_id": "8628e352-53ff-4b0f-98df-61b1c74e9dc3",
+      "detection_status": "not_triggered",
+      "triggered": false,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TN",
+      "detection_latency_ms": 0.025699999241624027,
+      "timestamp_start": "2026-09-18T15:09:52.676432Z",
+      "timestamp_end": "2026-09-18T15:09:52.676530Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "not_triggered",
+        "triggered": false,
+        "correlation_id": "8628e352-53ff-4b0f-98df-61b1c74e9dc3",
+        "run_id": "eval-benign-010-run-a9673c79-b0cf-4ec6-ba60-54ea3839d1b7",
+        "scenario_id": "scenario_a_benign",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'web3_dapp_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_sendTransaction'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'BenignDAppContract'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": false,
+            "evidence_detail": "Target is 'BenignDAppContract' (function: 'increment')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": false,
+            "evidence_detail": "No network event observed"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": false,
+            "evidence_detail": "Cannot evaluate: missing blockchain or network event"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": false,
+            "evidence_detail": "Incomplete sequence or causality order violation"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain"
+        ],
+        "unmatched_conditions": [
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "evidence": {
+          "correlation_id": "8628e352-53ff-4b0f-98df-61b1c74e9dc3",
+          "run_id": "eval-benign-010-run-a9673c79-b0cf-4ec6-ba60-54ea3839d1b7",
+          "scenario_id": "scenario_a_benign",
+          "duration_ms": 0.02,
+          "process_name": "web3_dapp_client",
+          "rpc_method": "eth_sendTransaction",
+          "contract_name": "BenignDAppContract",
+          "function_name": "increment"
+        },
+        "explanation": "Rule RULE-CHAINC2-001 did not trigger: contract 'BenignDAppContract' is benign baseline (not C2DataStore); no follow-up network activity observed (negative control).",
+        "evaluated_at": "2026-09-18T15:09:52.676527Z"
+      },
+      "details": {
+        "contract": "BenignDAppContract",
+        "function": "increment",
+        "action": "counter_increment",
+        "network_calls_made": 0
+      }
+    },
+    {
+      "experiment_id": "exp-28412ae5-f66e-4bdf-a3ae-06fb2fddd8e7",
+      "run_id": "eval-c2-001-run-15758866-296a-46b8-a1e6-ca0f229b77bb",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "9be1a121-a14b-4016-aad8-b6b3ac659e36",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.06120000034570694,
+      "timestamp_start": "2026-09-18T15:09:52.684677Z",
+      "timestamp_end": "2026-09-18T15:09:52.725157Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "9be1a121-a14b-4016-aad8-b6b3ac659e36",
+        "run_id": "eval-c2-001-run-15758866-296a-46b8-a1e6-ca0f229b77bb",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 40.02ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "9be1a121-a14b-4016-aad8-b6b3ac659e36",
+          "run_id": "eval-c2-001-run-15758866-296a-46b8-a1e6-ca0f229b77bb",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 40.078,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 40.02
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 40.02ms.",
+        "evaluated_at": "2026-09-18T15:09:52.725145Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-c0985880-034d-4ebb-806f-e03bf192cd77",
+      "run_id": "eval-c2-002-run-fef3d8c0-ea9a-4674-bb72-8338f40bea37",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "29946ebd-57b3-4937-a6a2-bb267c986af6",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.07560000085504726,
+      "timestamp_start": "2026-09-18T15:09:52.725194Z",
+      "timestamp_end": "2026-09-18T15:09:52.737208Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "29946ebd-57b3-4937-a6a2-bb267c986af6",
+        "run_id": "eval-c2-002-run-fef3d8c0-ea9a-4674-bb72-8338f40bea37",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 11.44ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "29946ebd-57b3-4937-a6a2-bb267c986af6",
+          "run_id": "eval-c2-002-run-fef3d8c0-ea9a-4674-bb72-8338f40bea37",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 11.481,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 11.438
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 11.438ms.",
+        "evaluated_at": "2026-09-18T15:09:52.737200Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-683826a3-94f4-4b27-9e30-6512170e98e9",
+      "run_id": "eval-c2-003-run-d2683f1b-df6d-4714-a953-ed4098195a8e",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "673680fe-11e5-42d3-ae9c-ca36efa25d0c",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.0594000011915341,
+      "timestamp_start": "2026-09-18T15:09:52.737240Z",
+      "timestamp_end": "2026-09-18T15:09:52.752017Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "673680fe-11e5-42d3-ae9c-ca36efa25d0c",
+        "run_id": "eval-c2-003-run-d2683f1b-df6d-4714-a953-ed4098195a8e",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 14.41ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "673680fe-11e5-42d3-ae9c-ca36efa25d0c",
+          "run_id": "eval-c2-003-run-d2683f1b-df6d-4714-a953-ed4098195a8e",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 14.447,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 14.411
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 14.411ms.",
+        "evaluated_at": "2026-09-18T15:09:52.752009Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-1a7cb4b9-cb42-4a24-9f2b-8a3d692f412f",
+      "run_id": "eval-c2-004-run-3ee07283-84d5-4a14-b393-354e617f6876",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "ed99cb71-fcb6-45f2-a37d-d9385166dcd5",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.07959999493323267,
+      "timestamp_start": "2026-09-18T15:09:52.752054Z",
+      "timestamp_end": "2026-09-18T15:09:52.767973Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "ed99cb71-fcb6-45f2-a37d-d9385166dcd5",
+        "run_id": "eval-c2-004-run-3ee07283-84d5-4a14-b393-354e617f6876",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 15.44ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "ed99cb71-fcb6-45f2-a37d-d9385166dcd5",
+          "run_id": "eval-c2-004-run-3ee07283-84d5-4a14-b393-354e617f6876",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 15.498,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 15.438
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 15.438ms.",
+        "evaluated_at": "2026-09-18T15:09:52.767962Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-ff1eb89b-380d-4ecb-a440-2933e0f0068a",
+      "run_id": "eval-c2-005-run-7afcc616-836b-4cb2-b283-d5454202dc18",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "e13441a5-738b-4bc2-b764-5b331a6f0831",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.05059999966761097,
+      "timestamp_start": "2026-09-18T15:09:52.768019Z",
+      "timestamp_end": "2026-09-18T15:09:52.779998Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "e13441a5-738b-4bc2-b764-5b331a6f0831",
+        "run_id": "eval-c2-005-run-7afcc616-836b-4cb2-b283-d5454202dc18",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 11.61ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "e13441a5-738b-4bc2-b764-5b331a6f0831",
+          "run_id": "eval-c2-005-run-7afcc616-836b-4cb2-b283-d5454202dc18",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 11.654,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 11.613
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 11.613ms.",
+        "evaluated_at": "2026-09-18T15:09:52.779991Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-adc14c65-1070-4824-8a7c-c4c6c1896337",
+      "run_id": "eval-c2-006-run-d4e25627-ff57-4198-acaa-985bff7b3fdf",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "4b7a822f-5315-4b6b-8f3f-3fd56e0df691",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.052600000344682485,
+      "timestamp_start": "2026-09-18T15:09:52.780039Z",
+      "timestamp_end": "2026-09-18T15:09:52.792035Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "4b7a822f-5315-4b6b-8f3f-3fd56e0df691",
+        "run_id": "eval-c2-006-run-d4e25627-ff57-4198-acaa-985bff7b3fdf",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 11.66ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "4b7a822f-5315-4b6b-8f3f-3fd56e0df691",
+          "run_id": "eval-c2-006-run-d4e25627-ff57-4198-acaa-985bff7b3fdf",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 11.694,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 11.655
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 11.655ms.",
+        "evaluated_at": "2026-09-18T15:09:52.792029Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-bed89760-ffcd-4cbe-bc32-0c606aaf68f3",
+      "run_id": "eval-c2-007-run-5f223a1e-cf16-49a9-a21d-308d69423dda",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "34fd8cea-d6b1-4f90-9c4c-6d0d981a5a96",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.049299997044727206,
+      "timestamp_start": "2026-09-18T15:09:52.792070Z",
+      "timestamp_end": "2026-09-18T15:09:52.793523Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "34fd8cea-d6b1-4f90-9c4c-6d0d981a5a96",
+        "run_id": "eval-c2-007-run-5f223a1e-cf16-49a9-a21d-308d69423dda",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 1.13ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "34fd8cea-d6b1-4f90-9c4c-6d0d981a5a96",
+          "run_id": "eval-c2-007-run-5f223a1e-cf16-49a9-a21d-308d69423dda",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 1.171,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 1.131
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 1.131ms.",
+        "evaluated_at": "2026-09-18T15:09:52.793516Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-2dc615b3-60cb-49cd-942e-25a5fccae870",
+      "run_id": "eval-c2-008-run-03135bdb-6cd5-4a65-934f-639116a3d8c4",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "78c54782-44fb-4b1e-ab88-3aa8f134bf1a",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.09180000051856041,
+      "timestamp_start": "2026-09-18T15:09:52.793553Z",
+      "timestamp_end": "2026-09-18T15:09:52.810203Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "78c54782-44fb-4b1e-ab88-3aa8f134bf1a",
+        "run_id": "eval-c2-008-run-03135bdb-6cd5-4a65-934f-639116a3d8c4",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 16.17ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "78c54782-44fb-4b1e-ab88-3aa8f134bf1a",
+          "run_id": "eval-c2-008-run-03135bdb-6cd5-4a65-934f-639116a3d8c4",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 16.21,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 16.174
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 16.174ms.",
+        "evaluated_at": "2026-09-18T15:09:52.810194Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-2bce45b0-6ea1-40d0-a055-057609df09af",
+      "run_id": "eval-c2-009-run-09c7f848-9e61-42ed-8d0c-58b8f818b8f8",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "092aba83-f109-42df-9712-edac71da201d",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.05420000525191426,
+      "timestamp_start": "2026-09-18T15:09:52.810246Z",
+      "timestamp_end": "2026-09-18T15:09:52.822621Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "092aba83-f109-42df-9712-edac71da201d",
+        "run_id": "eval-c2-009-run-09c7f848-9e61-42ed-8d0c-58b8f818b8f8",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 12.0ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "092aba83-f109-42df-9712-edac71da201d",
+          "run_id": "eval-c2-009-run-09c7f848-9e61-42ed-8d0c-58b8f818b8f8",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 12.047,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 11.999
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 11.999ms.",
+        "evaluated_at": "2026-09-18T15:09:52.822614Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    },
+    {
+      "experiment_id": "exp-77af2685-bb7c-449f-845a-61ac0f322b02",
+      "run_id": "eval-c2-010-run-9511af49-5b29-499a-90c0-3b0a645bb0b7",
+      "scenario_id": "scenario_b_synthetic_c2",
+      "ground_truth": "synthetic_c2",
+      "execution_status": "SUCCESS",
+      "total_events": 4,
+      "stages_observed": [
+        "endpoint",
+        "rpc",
+        "blockchain",
+        "network"
+      ],
+      "correlated_sequence_id": "8a1a3b1a-5965-4979-ae35-370c69fa37d8",
+      "detection_status": "triggered",
+      "triggered": true,
+      "rule_id": "RULE-CHAINC2-001",
+      "rule_version": "1.0.0",
+      "classification": "TP",
+      "detection_latency_ms": 0.05999999848427251,
+      "timestamp_start": "2026-09-18T15:09:52.822656Z",
+      "timestamp_end": "2026-09-18T15:09:52.834882Z",
+      "is_synthetic_fixture": false,
+      "detection_result": {
+        "rule_id": "RULE-CHAINC2-001",
+        "rule_name": "Synthetic Blockchain-Mediated C2 Pattern",
+        "rule_version": "1.0.0",
+        "status": "triggered",
+        "triggered": true,
+        "correlation_id": "8a1a3b1a-5965-4979-ae35-370c69fa37d8",
+        "run_id": "eval-c2-010-run-9511af49-5b29-499a-90c0-3b0a645bb0b7",
+        "scenario_id": "scenario_b_synthetic_c2",
+        "observed_stages": [
+          "endpoint",
+          "rpc",
+          "blockchain",
+          "network"
+        ],
+        "conditions": [
+          {
+            "condition_id": "cond_endpoint",
+            "description": "Endpoint/process telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Process: 'synthetic_c2_client'"
+          },
+          {
+            "condition_id": "cond_rpc",
+            "description": "JSON-RPC interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "RPC method: 'eth_call'"
+          },
+          {
+            "condition_id": "cond_blockchain",
+            "description": "Smart-contract interaction event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Contract: 'C2DataStore'"
+          },
+          {
+            "condition_id": "cond_c2datastore",
+            "description": "Smart-contract interaction targets synthetic C2DataStore",
+            "satisfied": true,
+            "evidence_detail": "Target is 'C2DataStore' (function: 'getLatestCommand')"
+          },
+          {
+            "condition_id": "cond_network",
+            "description": "Outbound network telemetry event exists in sequence",
+            "satisfied": true,
+            "evidence_detail": "Destination: '127.0.0.1:52124'"
+          },
+          {
+            "condition_id": "cond_network_timing",
+            "description": "Network event occurs chronologically at or after blockchain interaction (Δt >= 0)",
+            "satisfied": true,
+            "evidence_detail": "Network event occurred 11.87ms after blockchain read"
+          },
+          {
+            "condition_id": "cond_causal_timeline",
+            "description": "Events follow proper multi-layer causal order (Endpoint <= RPC <= Blockchain <= Network)",
+            "satisfied": true,
+            "evidence_detail": "Timeline causality verified across all 4 layers"
+          }
+        ],
+        "matched_conditions": [
+          "cond_endpoint",
+          "cond_rpc",
+          "cond_blockchain",
+          "cond_c2datastore",
+          "cond_network",
+          "cond_network_timing",
+          "cond_causal_timeline"
+        ],
+        "unmatched_conditions": [],
+        "evidence": {
+          "correlation_id": "8a1a3b1a-5965-4979-ae35-370c69fa37d8",
+          "run_id": "eval-c2-010-run-9511af49-5b29-499a-90c0-3b0a645bb0b7",
+          "scenario_id": "scenario_b_synthetic_c2",
+          "duration_ms": 11.911,
+          "process_name": "synthetic_c2_client",
+          "rpc_method": "eth_call",
+          "contract_name": "C2DataStore",
+          "function_name": "getLatestCommand",
+          "network_destination": "127.0.0.1:52124",
+          "blockchain_to_network_latency_ms": 11.872
+        },
+        "explanation": "Detection candidate identified by RULE-CHAINC2-001: Observed complete synthetic C2 behavioral pattern for process 'synthetic_c2_client' querying 'C2DataStore' via RPC followed by network communication to '127.0.0.1:52124' with latency 11.872ms.",
+        "evaluated_at": "2026-09-18T15:09:52.834875Z"
+      },
+      "details": {
+        "contract": "C2DataStore",
+        "function": "getLatestCommand",
+        "command": "BEACON",
+        "target_url": "http://127.0.0.1:52124/beacon",
+        "http_status": 200,
+        "network_calls_made": 1
+      }
+    }
+  ],
+  "research_disclaimer": "Laboratory evaluation result only. Measures detectability of predefined synthetic C2-like behavioral sequences under controlled conditions. Does not assert real-world malware detection capabilities, threat actor attribution, or universal blockchain security efficacy."
+}
