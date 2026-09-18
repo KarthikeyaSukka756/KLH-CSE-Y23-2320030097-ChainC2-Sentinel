@@ -86,9 +86,9 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 
 ## Current Phase Status
 
-**Current Phase:** Phase 1 — Detection  
-**Research Question:** *"Are blockchain-mediated C2 behaviors detectable?"*  
-**Status:** 🟢 **Phase 1 Implementation In Progress (Milestones 1–3 Complete)**
+**Current Phase:** Phase 2 — Protection  
+**Research Question:** *"Once blockchain-mediated C2-like behavior is detected, what controlled defensive measures can be applied to reduce or contain the observed behavior?"*  
+**Status:** 🟢 **Milestone 8 & Milestone 9 Complete (Defensive Response Design & Controlled Mitigation Implemented)**
 
 ### Completed Phase 1 Milestones
 
@@ -115,7 +115,6 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 - JSONL event store — append-only file-based persistence (`data/telemetry/events.jsonl`) with replaceable interface
 - Utility modules — UUID generation, structured JSON logging
 - Telemetry architecture documentation
-- Python unit test suite (88 passing)
 
 #### Milestone 4 — Controlled Detection Scenarios
 - `LocalHttpTargetServer` — controlled HTTP server strictly bound to 127.0.0.1 with audit logging
@@ -130,44 +129,35 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 - Scenario A correlation: accurately reconstructs legitimate Web3 activity and confirms zero follow-up network activity
 - Scenario B correlation: accurately reconstructs the complete 4-layer evidence chain (Endpoint → RPC → Blockchain → Network)
 - Robustness: handles incomplete/missing event sequences, out-of-order event ingestion, and separates mixed multi-scenario streams without leakage
-- Automated correlation test suite (9 tests, 109 total Python unit tests passing)
 
 #### Milestone 6 — Detection
 - `DetectionEngine` — explainable, deterministic detection engine evaluating factual correlated behavioral sequences against explicit rule sets
 - `SyntheticC2SequenceRule` (`RULE-CHAINC2-001`) — deterministic rule verifying 7 observable behavioral conditions (Endpoint → RPC → Blockchain `C2DataStore` → Subsequent Network follow-up)
 - Structured `DetectionResult` — factual evidence summaries preserving matched conditions, contract/function details, network destination, time deltas, and execution timeline
 - Negative-control verification: confirmed non-triggering on legitimate Web3 activity (Scenario A), benign contract interactions followed by network activity, inverted event timing, and incomplete sequences
-- Automated detection test suite (8 tests, 117 total Python unit tests passing)
 
 #### Milestone 7 — Detection Evaluation
 - `DetectionEvaluator` — configurable experimental evaluation orchestrator for repeated execution and statistical analysis
 - Structured evaluation models: `ExperimentRecord`, `EvaluationMetrics`, and `AggregateEvaluationResult` with safe zero-denominator handling
-- Benchmark evaluation dataset persisted to `data/evaluation/evaluation_results.json`
+- Benchmark evaluation dataset persisted to `data/evaluation/evaluation_results.json` and research summary artifacts in `results/detection/`
 - Empirical laboratory benchmark (20 runs): 100% detection rate (recall), 0.0% false-positive rate, 100% precision, 100% accuracy, ~0.048ms average detection latency
-- Automated evaluation test suite (10 tests, 127 total Python unit tests passing)
 
-### Current Implementation Summary
+### Completed Phase 2 Milestones
 
-The repository has completed all milestones of **Phase 1 — Detection**:
-- Local Hardhat EVM testbed
-- Synthetic smart contracts (`C2DataStore`, `BenignDAppContract`)
-- `SentinelEvent` unified schema
-- Modular collectors across endpoint, RPC, blockchain, and network telemetry
-- JSON-RPC telemetry proxy
-- Telemetry event normalizer
-- File-based JSONL persistence
-- Controlled laboratory scenarios (Scenario A: Benign Web3, Scenario B: Synthetic C2-like)
-- Safe local HTTP target server
-- Cross-layer correlation engine & behavioral evidence chains
-- Explainable rule-based detection layer & structured candidate results
-- Detection evaluation framework & machine-readable benchmark reports (`data/evaluation/`)
-- Automated test suites (127 Python unit tests, 26 Hardhat contract tests)
+#### Milestone 8 — Defensive Response Design
+- Formal defensive response specification: `docs/DEFENSIVE_RESPONSE_SPEC.md`
+- Structured response models: `DefensePlan`, `MitigationAction`, `DefenseExecutionRecord` in `src/protection/models.py`
+- Abstract responder interfaces: `BaseMitigationHandler`, `BaseEvidencePreserver` in `src/protection/interfaces.py`
+- Policy engine: `DefensivePolicyEngine` in `src/protection/policy.py` mapping detection evidence to layered defense actions with safety boundary enforcement
+- Strict negative-control bypass: confirmed non-triggered detections (Scenario A) yield zero defensive actions (`status=SKIPPED`)
 
-### Next Research Phase (Phase 2 — Protection)
-
-- **Completed:** Phase 1 — Detection (Milestones 1–7 fully implemented and experimentally validated)
-- **Next:** Phase 2 — Protection, Milestone 8 — Defensive Response Design
-- **Later:** Phase 2, Milestones 9–11 (Controlled protection/mitigation, protection evaluation, and final research analysis)
+#### Milestone 9 — Controlled Protection / Mitigation
+- Concrete mitigation handlers adhering to `BaseMitigationHandler`:
+  - `RpcFilterHandler`: Application-layer RPC proxy filter rejecting queries targeting synthetic `C2DataStore` while leaving benign contract calls unaffected
+  - `NetworkContainmentHandler`: Application-layer containment on `LocalHttpTargetServer` rejecting synthetic `/beacon` requests with HTTP 403 while preserving `/health`
+  - `ProcessIsolationHandler`: Cooperative laboratory scenario worker isolation via `ScenarioWorkerRegistry`, strictly refusing arbitrary host process termination
+  - `EvidenceSnapshotHandler`: Immutable forensic evidence bundle generation under `data/evidence/` with SHA-256 integrity checksums
+- `DefenseExecutor`: Deterministic executor managing full action lifecycle (`REQUESTED` → `EXECUTED` → `VERIFIED`/`FAILED`), automated post-action verification, and comprehensive rollback
 
 ---
 
@@ -186,16 +176,24 @@ src/
 ├── http_target/         # Controlled local HTTP target server (127.0.0.1)
 ├── models/              # SentinelEvent Pydantic v2 schema and sub-models
 ├── normalizer/          # Event normalizer and JSONL persistence
-├── rpc_proxy/           # aiohttp JSON-RPC telemetry proxy
+├── protection/          # Phase 2 Defensive response & mitigation framework
+│   ├── handlers/        # Concrete mitigation handlers (RPC, network, process, evidence)
+│   ├── executor.py      # DefenseExecutor orchestrator with verification & rollback
+│   ├── interfaces.py    # Abstract responder contracts (BaseMitigationHandler, BaseEvidencePreserver)
+│   ├── models.py        # Pydantic v2 models (DefensePlan, MitigationAction, DefenseExecutionRecord)
+│   ├── policy.py        # DefensivePolicyEngine mapping detections to defense plans
+│   └── process_registry.py # Controlled scenario worker registry (cooperative isolation)
+├── rpc_proxy/           # aiohttp JSON-RPC telemetry proxy with application-layer contract filtering
 ├── scenarios/           # Laboratory scenarios (Scenario A benign, Scenario B C2)
 │   ├── definitions/     # Concrete scenario implementations
 │   ├── payload.py       # Safe inert C2 payload schema and validator
 │   └── runner.py        # Scenario execution orchestrator
 └── utils/               # UUID generation, structured logging
-tests/                   # Python unit tests (collectors, correlation, detection, evaluation, normalizer, schema, scenarios, target)
-docs/                    # Architecture documentation, development plan
+tests/                   # Python unit tests (145 tests covering collectors, correlation, detection, evaluation, protection, scenarios)
+docs/                    # Architecture documentation, development plan, defensive response specification
 data/
-└── evaluation/          # Machine-readable evaluation reports (JSON)
+├── evaluation/          # Machine-readable evaluation reports (JSON)
+└── evidence/            # Preserved immutable forensic evidence snapshots (JSON)
 results/
 └── detection/           # Processed research artifacts (summary JSON, metrics CSV, experiment history CSV)
 ```
@@ -206,21 +204,21 @@ results/
 
 | Test Suite / Benchmark | Metric / Count | Result | Status |
 |:---|:---:|:---:|:---:|
-| Python Unit Tests (all modules) | 132 tests | 100% passing (6.94s) | ✅ Passing |
-| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (846ms) | ✅ Passing |
+| Python Unit Tests (all modules) | 145 tests | 100% passing (7.72s) | ✅ Passing |
+| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (3s) | ✅ Passing |
 | Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN]$) | ✅ Measured |
 | Scenario A False-Positive Rate | 10 negative runs | 0.0% ($FP / [FP+TN]$) | ✅ Measured |
 | Detection Precision | 10 triggered runs | 100.0% ($TP / [TP+FP]$) | ✅ Measured |
 | Detection Processing Latency | 20 evaluated runs | ~0.048ms avg (min: 0.025ms, max: 0.092ms) | ✅ Measured |
 
-*Note: The above metrics represent empirical laboratory evaluation on controlled synthetic scenarios. They quantify detectability in our controlled environment and do not assert real-world malware efficacy.*
+*Note: The above metrics represent empirical laboratory evaluation on controlled synthetic scenarios. They quantify detectability and response in our controlled environment and do not assert real-world malware efficacy.*
 
 ---
 
 ## Project Status
 
-**Current Research Phase:** Phase 1 — Detection (Complete: Milestones 1–7)  
-**Next Research Target:** Phase 2 — Protection, Milestone 8 — Defensive Response Design  
+**Current Research Phase:** Phase 2 — Protection (Milestones 8 & 9 Complete)  
+**Next Research Target:** Phase 2 — Protection, Milestone 10 — Protection Evaluation  
 
 | Research Phase | Milestone | Focus Area | Status |
 |:---|:---|:---|:---|
@@ -231,7 +229,7 @@ results/
 | **Phase 1 — Detection** | Milestone 5 | Cross-Layer Correlation | ✅ Complete |
 | **Phase 1 — Detection** | Milestone 6 | Detection | ✅ Complete |
 | **Phase 1 — Detection** | Milestone 7 | Detection Evaluation | ✅ Complete |
-| **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | ⏳ Next Target |
-| **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | 🔮 Future Research Phase |
-| **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | 🔮 Future Research Phase |
+| **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | ✅ Complete |
+| **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | ✅ Complete |
+| **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ⏳ Next Target |
 | **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | 🔮 Future Research Phase |

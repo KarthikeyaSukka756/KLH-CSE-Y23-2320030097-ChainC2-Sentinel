@@ -177,9 +177,9 @@ Phase 2 includes:
 | **Phase 1** | **Milestone 5** | Cross-Layer Correlation | ✅ **COMPLETE** |
 | **Phase 1** | **Milestone 6** | Detection | ✅ **COMPLETE** |
 | **Phase 1** | **Milestone 7** | Detection Evaluation | ✅ **COMPLETE** |
-| **Phase 2** | **Milestone 8** | Defensive Response Design | ⏳ **NEXT TARGET** |
-| **Phase 2** | **Milestone 9** | Controlled Protection / Mitigation | 🔮 **FUTURE** |
-| **Phase 2** | **Milestone 10** | Protection Evaluation | 🔮 **FUTURE** |
+| **Phase 2** | **Milestone 8** | Defensive Response Design | ✅ **COMPLETE** |
+| **Phase 2** | **Milestone 9** | Controlled Protection / Mitigation | ✅ **COMPLETE** |
+| **Phase 2** | **Milestone 10** | Protection Evaluation | ⏳ **NEXT TARGET** |
 | **Phase 2** | **Milestone 11** | Final Research Analysis | 🔮 **FUTURE** |
 
 ### Verified Current Repository Assets
@@ -207,18 +207,30 @@ Phase 2 includes:
   - `DetectionEvaluator` orchestrating repeated scenario experiments and computing deterministic statistical metrics
   - Structured models: `ExperimentRecord`, `EvaluationMetrics`, and `AggregateEvaluationResult`
   - Safe zero-denominator handling for all derived metrics
-  - Machine-readable persistence (`data/evaluation/evaluation_results.json`)
+  - Machine-readable persistence (`data/evaluation/evaluation_results.json` and `results/detection/`)
   - Empirical 20-run benchmark: 100% detection rate, 0.0% false-positive rate, ~0.048ms average detection latency
+- **Defensive Response Architecture (Milestone 8):**
+  - Formal specification: `docs/DEFENSIVE_RESPONSE_SPEC.md`
+  - Structured models: `DefensePlan`, `MitigationAction`, `DefenseExecutionRecord` in `src/protection/models.py`
+  - Abstract responder contracts: `BaseMitigationHandler`, `BaseEvidencePreserver` in `src/protection/interfaces.py`
+  - Policy engine: `DefensivePolicyEngine` in `src/protection/policy.py` mapping detection candidate evidence to layered defense actions with safety boundary enforcement
+  - Strict negative-control bypass: confirmed non-triggered detections (Scenario A) yield zero defensive actions
+- **Controlled Protection & Mitigation Handlers (Milestone 9):**
+  - `RpcFilterHandler`: Application-layer RPC proxy filter blocking queries targeting synthetic `C2DataStore` while allowing benign contracts
+  - `NetworkContainmentHandler`: Controlled HTTP containment on `LocalHttpTargetServer` rejecting `/beacon` requests with HTTP 403 while preserving `/health`
+  - `ProcessIsolationHandler`: Cooperative laboratory worker isolation via `ScenarioWorkerRegistry`, strictly refusing arbitrary host process termination
+  - `EvidenceSnapshotHandler`: Immutable structured forensic bundle preservation under `data/evidence/` with SHA-256 manifest checksums
+  - `DefenseExecutor`: Deterministic executor managing full action lifecycle (`REQUESTED` → `EXECUTED` → `VERIFIED`/`FAILED`), automated post-action verification, and full rollback capabilities
 - **Test Suites:**
-  - Python unit tests: **127 passing**
+  - Python unit tests: **145 passing**
   - Hardhat contract tests: **26 passing**
 
 ### Next Implementation Target
 
-**Phase 2 — Protection, Milestone 8 — Defensive Response Design:**
-- Transition from Phase 1 (Detection) to Phase 2 (Protection).
-- Design safe, explainable defensive response options mapped to detected cross-layer evidence.
-- Establish response boundaries and safety constraints for controlled laboratory execution.
+**Phase 2 — Protection, Milestone 10 — Protection Evaluation:**
+- Empirically evaluate the defensive response system across repeated runs
+- Measure mitigation containment efficacy, latency, side-effects on benign activity, and failure handling
+- Generate machine-readable protection evaluation datasets and metrics
 
 ---
 

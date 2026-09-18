@@ -66,6 +66,26 @@ class RpcProxy:
         )
 
         self.events: list[SentinelEvent] = []
+        self._filtered_contracts: set[str] = set()
+
+    def add_contract_filter(self, contract_address: str) -> None:
+        """Add a smart contract address to the RPC proxy quarantine filter."""
+        self._filtered_contracts.add(contract_address.lower())
+        logger.info("RPC Proxy: Added contract filter for %s", contract_address)
+
+    def remove_contract_filter(self, contract_address: str) -> None:
+        """Remove a smart contract address from the RPC proxy quarantine filter."""
+        self._filtered_contracts.discard(contract_address.lower())
+        logger.info("RPC Proxy: Removed contract filter for %s", contract_address)
+
+    def clear_filters(self) -> None:
+        """Clear all active contract filters."""
+        self._filtered_contracts.clear()
+        logger.info("RPC Proxy: Cleared all contract filters")
+
+    def is_contract_filtered(self, contract_address: str) -> bool:
+        """Check if a smart contract address is currently filtered."""
+        return contract_address.lower() in self._filtered_contracts
 
     def create_app(self) -> web.Application:
         """Create the aiohttp web application.
@@ -93,6 +113,7 @@ class RpcProxy:
             "component": "rpc-proxy",
             "upstream": self._upstream_url,
             "events_captured": len(self.events),
+            "filtered_contracts_count": len(self._filtered_contracts),
         })
 
     async def _handle_rpc(self, request: web.Request) -> web.Response:
@@ -119,6 +140,32 @@ class RpcProxy:
 
         # Safe parameter summary (avoid logging sensitive data)
         request_params = _safe_params_summary(rpc_request.get("params"))
+
+        # Application-layer containment check: inspect target contract address
+        target_contract = _extract_target_contract(rpc_request.get("params"))
+        if target_contract and target_contract in self._filtered_contracts:
+            error_msg = f"Blocked by Sentinel RPC Protection Policy: target contract {target_contract} is quarantined"
+            logger.warning("RPC containment triggered for target contract: %s", target_contract)
+            event = self._collector.collect(
+                rpc_method=rpc_method,
+                status="error",
+                request_id=request_id,
+                request_params=request_params,
+                error_message=error_msg,
+                duration_ms=0.0,
+            )
+            self._record_event(event)
+            return web.json_response(
+                {
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32000,
+                        "message": error_msg,
+                    },
+                    "id": rpc_request.get("id"),
+                },
+                status=200,
+            )
 
         start_time = time.monotonic()
 
@@ -246,3 +293,23 @@ def _safe_result_summary(result: Any) -> Optional[dict[str, Any]]:
     if isinstance(result, list):
         return {"_type": "list", "_count": len(result)}
     return {"_type": type(result).__name__}
+
+
+def _extract_target_contract(params: Any) -> Optional[str]:
+    """Safely extract target contract address from JSON-RPC params for containment inspection.
+
+    Args:
+        params: Raw JSON-RPC params (list or dict).
+
+    Returns:
+        Lowercased contract address string if present, or None.
+    """
+    if isinstance(params, list) and len(params) > 0 and isinstance(params[0], dict):
+        to_addr = params[0].get("to")
+        if isinstance(to_addr, str):
+            return to_addr.lower()
+    elif isinstance(params, dict):
+        to_addr = params.get("to")
+        if isinstance(to_addr, str):
+            return to_addr.lower()
+    return None

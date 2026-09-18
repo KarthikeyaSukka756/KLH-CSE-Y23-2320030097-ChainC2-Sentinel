@@ -69,6 +69,16 @@ class TargetRequestHandler(BaseHTTPRequestHandler):
         self.server.record_request(request_record)  # type: ignore[attr-defined]
 
         if parsed.path == "/beacon":
+            is_quarantined = getattr(self.server, "is_quarantined", lambda ip: False)
+            if is_quarantined(self.client_address[0]):
+                logger.warning("LocalHttpTarget: Rejected beacon from quarantined client %s", self.client_address[0])
+                self._send_json(403, {
+                    "status": "blocked",
+                    "error": "Quarantined by Sentinel Network Containment Policy",
+                    "blocked_at": datetime.now(timezone.utc).isoformat(),
+                })
+                return
+
             self._send_json(200, {
                 "status": "acknowledged",
                 "action": "BEACON",
@@ -89,15 +99,21 @@ class TargetRequestHandler(BaseHTTPRequestHandler):
 
 
 class TargetHTTPServer(HTTPServer):
-    """Custom HTTPServer maintaining an in-memory request log."""
+    """Custom HTTPServer maintaining an in-memory request log and containment status."""
 
     def __init__(self, server_address: tuple[str, int], RequestHandlerClass: type[BaseHTTPRequestHandler]):
         super().__init__(server_address, RequestHandlerClass)
         self.received_requests: list[dict[str, Any]] = []
+        self.containment_active: bool = False
+        self.quarantined_clients: set[str] = set()
 
     def record_request(self, record: dict[str, Any]) -> None:
         """Record an incoming request record in thread-safe fashion."""
         self.received_requests.append(record)
+
+    def is_quarantined(self, client_ip: str) -> bool:
+        """Check if containment is active for all clients or this specific client IP."""
+        return self.containment_active or client_ip in self.quarantined_clients
 
 
 class LocalHttpTargetServer:
@@ -125,6 +141,8 @@ class LocalHttpTargetServer:
         self._server: Optional[TargetHTTPServer] = None
         self._thread: Optional[threading.Thread] = None
         self._running = False
+        self._containment_active = False
+        self._quarantined_clients: set[str] = set()
 
     @property
     def port(self) -> int:
@@ -161,6 +179,8 @@ class LocalHttpTargetServer:
             return self
 
         self._server = TargetHTTPServer((self.host, self.requested_port), TargetRequestHandler)
+        self._server.containment_active = self._containment_active
+        self._server.quarantined_clients = set(self._quarantined_clients)
         self._thread = threading.Thread(
             target=self._server.serve_forever,
             name=f"LocalHttpTarget-{self.port}",
@@ -187,6 +207,44 @@ class LocalHttpTargetServer:
         """Clear recorded requests."""
         if self._server is not None:
             self._server.received_requests.clear()
+
+    def enable_containment(self, client_ip: Optional[str] = None) -> None:
+        """Enable network containment policy on this target server."""
+        if client_ip:
+            self._quarantined_clients.add(client_ip)
+            if self._server is not None:
+                self._server.quarantined_clients.add(client_ip)
+        else:
+            self._containment_active = True
+            if self._server is not None:
+                self._server.containment_active = True
+        logger.info("LocalHttpTarget: Network containment enabled (client=%s)", client_ip or "all")
+
+    def disable_containment(self, client_ip: Optional[str] = None) -> None:
+        """Disable network containment policy, restoring baseline response."""
+        if client_ip:
+            self._quarantined_clients.discard(client_ip)
+            if self._server is not None:
+                self._server.quarantined_clients.discard(client_ip)
+        else:
+            self._containment_active = False
+            self._quarantined_clients.clear()
+            if self._server is not None:
+                self._server.containment_active = False
+                self._server.quarantined_clients.clear()
+        logger.info("LocalHttpTarget: Network containment disabled (client=%s)", client_ip or "all")
+
+    def is_containment_active(self, client_ip: Optional[str] = None) -> bool:
+        """Check whether containment policy is currently active."""
+        if client_ip:
+            if client_ip in self._quarantined_clients:
+                return True
+            if self._server is not None:
+                return self._server.is_quarantined(client_ip)
+            return self._containment_active
+        if self._server is not None:
+            return self._server.containment_active
+        return self._containment_active
 
     def __enter__(self) -> LocalHttpTargetServer:
         self.start()
