@@ -48,6 +48,16 @@ async function main() {
   const benignAddress = await benignDApp.getAddress();
   console.log("  BenignDAppContract deployed at:", benignAddress);
 
+  // --- Deploy LegitimateDAppContract (Scenario C) ---
+  console.log("\nDeploying LegitimateDAppContract (Scenario C)...");
+  const LegitimateDAppContract = await hre.ethers.getContractFactory(
+    "LegitimateDAppContract"
+  );
+  const legitimateDApp = await LegitimateDAppContract.deploy();
+  await legitimateDApp.waitForDeployment();
+  const legitimateAddress = await legitimateDApp.getAddress();
+  console.log("  LegitimateDAppContract deployed at:", legitimateAddress);
+
   // --- Write deployed addresses to JSON ---
   const addresses = {
     network: hre.network.name,
@@ -65,6 +75,10 @@ async function main() {
         constructorArgs: {
           initialMessage: initialMessage,
         },
+      },
+      LegitimateDAppContract: {
+        address: legitimateAddress,
+        name: "LegitimateDAppContract",
       },
     },
   };

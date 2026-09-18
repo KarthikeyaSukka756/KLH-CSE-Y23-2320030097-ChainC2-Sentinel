@@ -11,6 +11,7 @@ from src.models.events import SentinelEvent, TelemetrySource
 from src.normalizer.normalizer import EventStore
 from src.scenarios.definitions.benign_scenario import BenignWeb3Scenario
 from src.scenarios.definitions.c2_scenario import SyntheticC2Scenario
+from src.scenarios.definitions.legitimate_dapp_scenario import LegitimateDAppScenario
 from src.scenarios.payload import SyntheticC2Payload
 from src.scenarios.runner import ScenarioRunner
 
@@ -160,32 +161,62 @@ class TestSyntheticC2Scenario:
 
 
 @pytest.mark.unit
+class TestLegitimateDAppScenario:
+    """Tests for Scenario C (Legitimate DApp Baseline)."""
+
+    def test_scenario_c_execution_and_negative_control(self):
+        """Scenario C executes multi-step task lifecycle with zero outbound network events."""
+        scenario = LegitimateDAppScenario(run_id="run-legit-test-001")
+        result = scenario.run()
+
+        assert result.success is True
+        assert result.scenario_id == "legitimate_dapp"
+        assert result.run_id == "run-legit-test-001"
+        assert len(result.events) == 7
+        assert result.event_counts_by_source[TelemetrySource.ENDPOINT.value] == 1
+        assert result.event_counts_by_source[TelemetrySource.RPC.value] == 4
+        assert result.event_counts_by_source[TelemetrySource.BLOCKCHAIN.value] == 2
+        assert result.event_counts_by_source.get(TelemetrySource.NETWORK.value, 0) == 0
+
+        # Details check
+        assert result.details["contract"] == "LegitimateDAppContract"
+        assert result.details["final_status"] == "Completed"
+        assert result.details["network_calls_made"] == 0
+
+        # Verify event ordering and metadata
+        for ev in result.events:
+            assert ev.metadata["scenario_id"] == "legitimate_dapp"
+            assert ev.metadata["run_id"] == "run-legit-test-001"
+
+
+@pytest.mark.unit
 class TestScenarioRunner:
     """Tests for the ScenarioRunner orchestrator and JSONL persistence."""
 
     def test_run_all_with_jsonl_persistence(self, tmp_path: Path):
-        """ScenarioRunner runs both scenarios and persists valid events to JSONL."""
+        """ScenarioRunner runs all three scenarios and persists valid events to JSONL."""
         output_file = str(tmp_path / "events.jsonl")
         runner = ScenarioRunner(output_path=output_file)
 
         with LocalHttpTargetServer(host="127.0.0.1", port=0) as target_srv:
             results = runner.run_all(target_server=target_srv)
 
-        assert len(results) == 2
+        assert len(results) == 3
         summary = runner.summarize(results)
 
-        assert summary["total_scenarios"] == 2
-        assert summary["total_events"] == 7  # 3 from Scenario A + 4 from Scenario B
-        assert summary["events_by_source"][TelemetrySource.ENDPOINT.value] == 2
-        assert summary["events_by_source"][TelemetrySource.RPC.value] == 2
-        assert summary["events_by_source"][TelemetrySource.BLOCKCHAIN.value] == 2
+        assert summary["total_scenarios"] == 3
+        # 3 (Scenario A) + 4 (Scenario B) + 7 (Scenario C) = 14 total events
+        assert summary["total_events"] == 14
+        assert summary["events_by_source"][TelemetrySource.ENDPOINT.value] == 3
+        assert summary["events_by_source"][TelemetrySource.RPC.value] == 6
+        assert summary["events_by_source"][TelemetrySource.BLOCKCHAIN.value] == 4
         assert summary["events_by_source"][TelemetrySource.NETWORK.value] == 1
 
         # Verify file on disk
         assert os.path.exists(output_file)
         store = EventStore(output_file)
         saved_events = store.load_events()
-        assert len(saved_events) == 7
+        assert len(saved_events) == 14
 
         # Verify every event is a valid SentinelEvent with proper metadata
         for ev in saved_events:

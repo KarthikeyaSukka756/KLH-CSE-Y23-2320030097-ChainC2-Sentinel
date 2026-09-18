@@ -17,6 +17,7 @@ from src.normalizer.normalizer import EventStore
 from src.scenarios.base import ScenarioResult
 from src.scenarios.definitions.benign_scenario import BenignWeb3Scenario
 from src.scenarios.definitions.c2_scenario import SyntheticC2Scenario
+from src.scenarios.definitions.legitimate_dapp_scenario import LegitimateDAppScenario
 
 logger = logging.getLogger("chainc2_sentinel.scenarios.runner")
 
@@ -57,6 +58,17 @@ class ScenarioRunner:
         )
         return scenario.run()
 
+    def run_legitimate_dapp(self, run_id: Optional[str] = None) -> ScenarioResult:
+        """Run Scenario C (Legitimate DApp Baseline)."""
+        scenario = LegitimateDAppScenario(
+            run_id=run_id,
+            event_store=self.event_store,
+            host=self.host,
+            rpc_proxy_url=self.rpc_proxy_url,
+            upstream_url=self.upstream_url,
+        )
+        return scenario.run()
+
     def run_synthetic_c2(
         self,
         target_server: Optional[LocalHttpTargetServer] = None,
@@ -74,10 +86,11 @@ class ScenarioRunner:
         return scenario.run()
 
     def run_all(self, target_server: Optional[LocalHttpTargetServer] = None) -> list[ScenarioResult]:
-        """Run all Phase 1 Milestone 4 scenarios in sequence."""
+        """Run all Phase 1 scenarios in sequence (Scenario A, Scenario B, Scenario C)."""
         results = [
             self.run_benign(),
             self.run_synthetic_c2(target_server=target_server),
+            self.run_legitimate_dapp(),
         ]
         return results
 

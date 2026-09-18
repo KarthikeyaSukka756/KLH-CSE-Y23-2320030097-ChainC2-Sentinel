@@ -115,7 +115,7 @@ class TestEvaluationArtifacts:
                 rows.append(row)
 
         assert len(rows) == len(src_experiments)
-        assert len(rows) == 20
+        assert len(rows) == 30
 
         for row, src_exp in zip(rows, src_experiments):
             assert row["experiment_id"] == src_exp["experiment_id"]
@@ -126,7 +126,7 @@ class TestEvaluationArtifacts:
             assert (row["triggered"].lower() == "true") == src_exp["triggered"]
             assert row["detection_status"] == src_exp["detection_status"]
             assert int(row["total_events"]) == src_exp["total_events"]
-            assert row["stages_observed"] == ";".join(src_exp["stages_observed"])
+            assert row["stages_observed"] == ";".join(exp_stages if (exp_stages := src_exp.get("stages_observed", [])) else [])
             assert float(row["detection_latency_ms"]) == src_exp["detection_latency_ms"]
             assert row["execution_status"] == src_exp["execution_status"]
 
@@ -144,4 +144,4 @@ class TestEvaluationArtifacts:
 
         with open(artifacts["summary_json"], "r", encoding="utf-8") as f:
             custom_summary = json.load(f)
-        assert custom_summary["total_experiments"] == 20
+        assert custom_summary["total_experiments"] == 30

@@ -32,6 +32,7 @@ from src.http_target.server import LocalHttpTargetServer
 from src.models.events import SentinelEvent
 from src.scenarios.definitions.benign_scenario import BenignWeb3Scenario
 from src.scenarios.definitions.c2_scenario import SyntheticC2Scenario
+from src.scenarios.definitions.legitimate_dapp_scenario import LegitimateDAppScenario
 from src.utils.identifiers import generate_run_id
 import uuid
 
@@ -86,7 +87,7 @@ class DetectionEvaluator:
         fn = sum(1 for e in experiments if e.classification == ClassificationVerdict.FALSE_NEGATIVE)
 
         positives = sum(1 for e in experiments if e.ground_truth == GroundTruth.SYNTHETIC_C2)
-        negatives = sum(1 for e in experiments if e.ground_truth == GroundTruth.BENIGN)
+        negatives = sum(1 for e in experiments if e.ground_truth in (GroundTruth.BENIGN, GroundTruth.LEGITIMATE_DAPP))
 
         # Derived rates with safe zero-denominator handling
         # Detection Rate / Recall / Sensitivity: TP / (TP + FN)
@@ -236,6 +237,15 @@ class DetectionEvaluator:
                 upstream_url=self.upstream_url,
             )
             scenario_result = scenario.run()
+        elif scenario_type in ("legitimate_dapp", "scenario_c_legitimate_dapp"):
+            ground_truth = GroundTruth.LEGITIMATE_DAPP
+            scenario = LegitimateDAppScenario(
+                run_id=r_id,
+                host=self.host,
+                rpc_proxy_url=self.rpc_proxy_url,
+                upstream_url=self.upstream_url,
+            )
+            scenario_result = scenario.run()
         else:
             raise ValueError(f"Unknown scenario_type: {scenario_type}")
 
@@ -260,16 +270,18 @@ class DetectionEvaluator:
 
     def run_evaluation(
         self,
-        repetitions_benign: int = 5,
-        repetitions_c2: int = 5,
+        repetitions_benign: int = 10,
+        repetitions_c2: int = 10,
+        repetitions_legitimate_dapp: int = 0,
         target_server: Optional[LocalHttpTargetServer] = None,
         output_path: Optional[str] = None,
     ) -> AggregateEvaluationResult:
-        """Run repeated evaluation experiments across Scenario A and Scenario B.
+        """Run repeated evaluation experiments across Scenario A, Scenario B, and Scenario C.
 
         Args:
             repetitions_benign: Number of Scenario A (benign control) executions.
             repetitions_c2: Number of Scenario B (synthetic C2-like) executions.
+            repetitions_legitimate_dapp: Number of Scenario C (legitimate DApp baseline) executions.
             target_server: Optional shared local HTTP target server.
             output_path: Optional file path to persist JSON results.
 
@@ -277,26 +289,34 @@ class DetectionEvaluator:
             AggregateEvaluationResult containing all records and deterministic metrics.
         """
         logger.info(
-            "Beginning Milestone 7 Detection Evaluation: %d benign, %d synthetic C2 repetitions",
+            "Beginning Phase 1 Detection Evaluation: %d benign, %d synthetic C2, %d legitimate DApp repetitions",
             repetitions_benign,
             repetitions_c2,
+            repetitions_legitimate_dapp,
         )
 
         experiments: list[ExperimentRecord] = []
         scenario_counts: dict[str, int] = {
             "scenario_a_benign": 0,
             "scenario_b_synthetic_c2": 0,
+            "scenario_c_legitimate_dapp": 0,
         }
 
-        # Run Scenario A repetitions (Negative Control)
+        # Run Scenario A repetitions (Benign Negative Control)
         for i in range(repetitions_benign):
             run_id = f"eval-benign-{i + 1:03d}-{generate_prefixed_uuid('run')}"
             rec = self.run_single_experiment(scenario_type="benign", run_id=run_id)
             experiments.append(rec)
             scenario_counts["scenario_a_benign"] += 1
 
-        # Run Scenario B repetitions (Positive Control)
-        # If target_server is provided, use it; otherwise create a shared local server for the batch
+        # Run Scenario C repetitions (Legitimate DApp Baseline Negative Control)
+        for i in range(repetitions_legitimate_dapp):
+            run_id = f"eval-legit-{i + 1:03d}-{generate_prefixed_uuid('run')}"
+            rec = self.run_single_experiment(scenario_type="legitimate_dapp", run_id=run_id)
+            experiments.append(rec)
+            scenario_counts["scenario_c_legitimate_dapp"] += 1
+
+        # Run Scenario B repetitions (Synthetic C2 Positive Control)
         if target_server is not None:
             for i in range(repetitions_c2):
                 run_id = f"eval-c2-{i + 1:03d}-{generate_prefixed_uuid('run')}"

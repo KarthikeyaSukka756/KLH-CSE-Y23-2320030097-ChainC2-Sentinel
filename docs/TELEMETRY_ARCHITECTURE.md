@@ -6,7 +6,7 @@ This document describes the telemetry foundation for ChainC2 Sentinel — the da
 
 **Research Phase:** Phase 1 — Detection  
 **Milestone:** Milestone 3 — Telemetry Foundation  
-**Research Question Addressed:** *"Are blockchain-mediated C2 behaviors detectable?"*
+**Research Question Addressed:** *"Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?"*
 
 Telemetry serves as the foundational, enabling data layer for the Phase 1 detection research question. Rather than acting as a standalone detection system, this foundation collects, normalizes, and stores the multi-source evidence necessary to enable downstream cross-layer correlation (Milestone 5) and detection logic (Milestone 6).
 
@@ -125,7 +125,7 @@ The `SentinelEvent` is the common normalized event representation. All telemetry
 | `function_name` | `str` | No | Called function name |
 | `event_name` | `str` | No | Emitted event name |
 | `event_args` | `dict` | No | Event arguments |
-| `contract_name` | `str` | No | `C2DataStore` or `BenignDAppContract` |
+| `contract_name` | `str` | No | `C2DataStore`, `BenignDAppContract`, or `LegitimateDAppContract` |
 
 ### NetworkInfo
 

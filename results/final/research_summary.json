@@ -8,7 +8,7 @@
   },
   "research_questions": {
     "rq1": {
-      "question": "Are blockchain-mediated C2 behaviors detectable?",
+      "question": "Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?",
       "target_phase": "Phase 1 — Detection",
       "conclusion": "Yes, within the controlled laboratory environment, blockchain-mediated C2-like sequences are detectable with 100.0% recall and 0.0% false-positive rate across the evaluated synthetic testbed when endpoint, RPC/blockchain, and network telemetry are temporally and contextually correlated."
     },
@@ -20,8 +20,8 @@
   },
   "phase_1": {
     "focus": "Detection",
-    "research_question": "Are blockchain-mediated C2 behaviors detectable?",
-    "evaluation_id": "eval-53e4910d-a742-46fc-8188-3b6eb7c5f566",
+    "research_question": "Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?",
+    "evaluation_id": "eval-e7ad9f1a-8361-4f27-8abb-cfb6bf00d48c",
     "rule_id": "RULE-CHAINC2-001",
     "rule_version": "1.0.0",
     "evidence_chain": [
@@ -31,19 +31,21 @@
       "Retrieved Synthetic C2 Data / Configuration",
       "Subsequent Network Activity",
       "Cross-Layer Correlation",
+      "Explainable Rule-Based Weighted Scoring",
       "Detection",
       "Evidence / Alert"
     ],
     "scenario_breakdown": {
       "scenario_a_benign": 10,
-      "scenario_b_synthetic_c2": 10
+      "scenario_b_synthetic_c2": 10,
+      "scenario_c_legitimate_dapp": 10
     },
-    "total_experiments": 20,
-    "successful_runs": 20,
+    "total_experiments": 30,
+    "successful_runs": 30,
     "failed_runs": 0,
     "confusion_matrix": {
       "true_positives": 10,
-      "true_negatives": 10,
+      "true_negatives": 20,
       "false_positives": 0,
       "false_negatives": 0
     },
@@ -56,9 +58,24 @@
       "f1_score": 1.0
     },
     "detection_latency": {
-      "average_ms": 0.048005000280682,
-      "min_ms": 0.025200002710334957,
-      "max_ms": 0.09180000051856041
+      "average_ms": 0.10161999962292612,
+      "min_ms": 0.04510000144364312,
+      "max_ms": 0.687899999320507
+    },
+    "scoring_model": {
+      "type": "Explainable Rule-Based Weighted Scoring",
+      "threshold": 80.0,
+      "scenario_a_score": 35.0,
+      "scenario_c_score": 35.0,
+      "scenario_b_score": 100.0,
+      "weights": {
+        "endpoint_context": 10.0,
+        "rpc_interaction": 10.0,
+        "contract_interaction": 15.0,
+        "suspicious_retrieval": 20.0,
+        "c2_configuration": 20.0,
+        "network_followup": 25.0
+      }
     },
     "source_artifacts": [
       "data/evaluation/evaluation_results.json",

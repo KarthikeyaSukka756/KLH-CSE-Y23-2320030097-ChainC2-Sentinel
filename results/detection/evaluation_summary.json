@@ -1,22 +1,23 @@
 {
-  "evaluation_id": "eval-53e4910d-a742-46fc-8188-3b6eb7c5f566",
-  "created_at": "2026-09-18T15:09:53.336884Z",
+  "evaluation_id": "eval-e7ad9f1a-8361-4f27-8abb-cfb6bf00d48c",
+  "created_at": "2026-09-18T17:18:09.266994Z",
   "rule_id": "RULE-CHAINC2-001",
   "rule_version": "1.0.0",
   "scenario_counts": {
     "scenario_a_benign": 10,
-    "scenario_b_synthetic_c2": 10
+    "scenario_b_synthetic_c2": 10,
+    "scenario_c_legitimate_dapp": 10
   },
-  "total_experiments": 20,
-  "successful_runs": 20,
+  "total_experiments": 30,
+  "successful_runs": 30,
   "failed_runs": 0,
   "experiment_success_rate": 1.0,
   "true_positives": 10,
-  "true_negatives": 10,
+  "true_negatives": 20,
   "false_positives": 0,
   "false_negatives": 0,
   "ground_truth_positives": 10,
-  "ground_truth_negatives": 10,
+  "ground_truth_negatives": 20,
   "detection_rate": 1.0,
   "false_positive_rate": 0.0,
   "precision": 1.0,
@@ -24,9 +25,9 @@
   "accuracy": 1.0,
   "f1_score": 1.0,
   "detection_latency": {
-    "average_ms": 0.048005000280682,
-    "min_ms": 0.025200002710334957,
-    "max_ms": 0.09180000051856041
+    "average_ms": 0.10161999962292612,
+    "min_ms": 0.04510000144364312,
+    "max_ms": 0.687899999320507
   },
   "metric_formulas": {
     "detection_rate": "TP / (TP + FN) [Denominator: Ground Truth Positives]",

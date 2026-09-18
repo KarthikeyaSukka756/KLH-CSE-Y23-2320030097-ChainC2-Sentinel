@@ -12,6 +12,11 @@ from src.detection.models import (
     DetectionStatus,
 )
 from src.detection.rules import BaseDetectionRule, SyntheticC2SequenceRule
+from src.detection.scoring import (
+    RuleBasedScorer,
+    ScoringResult,
+    ScoringRuleContribution,
+)
 
 __all__ = [
     "DetectionEngine",
@@ -20,4 +25,7 @@ __all__ = [
     "DetectionResult",
     "DetectionConditionMatch",
     "DetectionStatus",
+    "RuleBasedScorer",
+    "ScoringResult",
+    "ScoringRuleContribution",
 ]

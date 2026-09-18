@@ -63,21 +63,21 @@ cd ../..
 ### Running Tests
 
 ```bash
-# Run Python unit tests (telemetry schema, collectors, normalizer, persistence)
+# Run Python unit tests (telemetry schema, collectors, normalizer, scoring, detection, protection)
 python -m pytest tests/ -v --strict-markers -m unit
 
-# Run Hardhat contract tests (C2DataStore, BenignDAppContract)
+# Run Hardhat contract tests (C2DataStore, BenignDAppContract, LegitimateDAppContract)
 cd src/blockchain
 npx hardhat test
 ```
 
 ### Development Environment
 
-- **Python** — telemetry collectors, event schema, normalizer, persistence
+- **Python** — telemetry collectors, event schema, normalizer, correlation, scoring, detection, protection
 - **Node.js / Hardhat** — local EVM environment, smart contract compilation and testing
 - **Pydantic v2** — event schema validation
 - **aiohttp** — RPC telemetry proxy
-- **Solidity** — synthetic smart contracts (C2DataStore, BenignDAppContract)
+- **Solidity** — synthetic smart contracts (`C2DataStore`, `BenignDAppContract`, `LegitimateDAppContract`)
 - **ethers.js** — contract deployment and testing
 
 All blockchain activity is local and synthetic. No public blockchains are used.
@@ -86,9 +86,9 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 
 ## Current Phase Status
 
-**Current Phase:** Phase 2 — Protection  
-**Research Question:** *"Once blockchain-mediated C2-like behavior is detected, what controlled defensive measures can be applied to reduce or contain the observed behavior?"*  
-**Status:** 🟢 **Milestone 8 & Milestone 9 Complete (Defensive Response Design & Controlled Mitigation Implemented)**
+**Current Phase:** Phase 1 & Phase 2 Complete (Architecture Locked)<br>
+**Research Question:** *"Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?"*<br>
+**Status:** 🟢 **Milestones 1–11 Complete (Detection & Protection Evaluated Across 3 Scenarios)**
 
 ### Completed Phase 1 Milestones
 
@@ -99,16 +99,17 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 #### Milestone 2 — Synthetic Blockchain Environment
 - Local Hardhat EVM environment (chain ID 31337)
 - `C2DataStore` Solidity contract — synthetic research data store for safe C2 simulation
-- `BenignDAppContract` Solidity contract — counter/message DApp for legitimate Web3 baseline activity
+- `BenignDAppContract` Solidity contract — counter/message DApp for basic legitimate Web3 activity (Scenario A)
+- `LegitimateDAppContract` Solidity contract — deterministic task-registry DApp for realistic multi-step DApp baseline (Scenario C)
 - Automated contract deployment script
-- Hardhat contract test suite (26 passing)
+- Hardhat contract test suite (35 passing)
 
 #### Milestone 3 — Telemetry Foundation
 - `SentinelEvent` normalized telemetry schema (Pydantic v2, strict validation)
 - Four source-specific telemetry collectors:
   - **Endpoint** — safe local process metadata (current process only; no OS-wide enumeration)
   - **RPC** — JSON-RPC request/response metadata with client-facing proxy and upstream Hardhat node distinction
-  - **Blockchain** — synthetic smart-contract interaction metadata (C2DataStore and BenignDAppContract)
+  - **Blockchain** — synthetic smart-contract interaction metadata (`C2DataStore`, `BenignDAppContract`, `LegitimateDAppContract`)
   - **Network** — controlled local HTTP/network activity metadata (no packet capture)
 - RPC telemetry proxy (aiohttp) — forwards requests between Web3 client and local Hardhat node while capturing telemetry; this is monitoring infrastructure, not attacker C2
 - Event normalizer — validates and converts raw collector output into the common SentinelEvent schema
@@ -119,28 +120,39 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 #### Milestone 4 — Controlled Detection Scenarios
 - `LocalHttpTargetServer` — controlled HTTP server strictly bound to 127.0.0.1 with audit logging
 - `SyntheticC2Payload` — safe inert configuration model and validator (restricting actions strictly to 'BEACON' and targets to localhost)
-- `BenignWeb3Scenario` (Scenario A) — negative control executing legitimate BenignDAppContract interactions with zero follow-up network activity
+- `BenignWeb3Scenario` (Scenario A) — negative control executing basic legitimate `BenignDAppContract` interactions with zero follow-up network activity
 - `SyntheticC2Scenario` (Scenario B) — synthetic blockchain-mediated C2-like behavior generating the complete 4-layer telemetry chain (Endpoint → RPC → Blockchain → Network)
+- `LegitimateDAppScenario` (Scenario C) — negative control executing realistic multi-step `LegitimateDAppContract` operations (create, read, update, read) with zero follow-up network activity
 - `ScenarioRunner` — scenario orchestrator with structured execution summaries and JSONL telemetry persistence
 
 #### Milestone 5 — Cross-Layer Correlation
 - `CrossLayerCorrelationEngine` — deterministic correlation engine reconstructing multi-layer evidence chains across telemetry layers
 - `CorrelatedSequence` & `EventTransition` — structured models explicitly capturing temporal ordering, layer transitions, and causal time deltas ($\Delta t$)
 - Scenario A correlation: accurately reconstructs legitimate Web3 activity and confirms zero follow-up network activity
+- Scenario C correlation: accurately reconstructs realistic multi-step DApp lifecycle and confirms zero follow-up network activity
 - Scenario B correlation: accurately reconstructs the complete 4-layer evidence chain (Endpoint → RPC → Blockchain → Network)
 - Robustness: handles incomplete/missing event sequences, out-of-order event ingestion, and separates mixed multi-scenario streams without leakage
 
-#### Milestone 6 — Detection
-- `DetectionEngine` — explainable, deterministic detection engine evaluating factual correlated behavioral sequences against explicit rule sets
-- `SyntheticC2SequenceRule` (`RULE-CHAINC2-001`) — deterministic rule verifying 7 observable behavioral conditions (Endpoint → RPC → Blockchain `C2DataStore` → Subsequent Network follow-up)
-- Structured `DetectionResult` — factual evidence summaries preserving matched conditions, contract/function details, network destination, time deltas, and execution timeline
-- Negative-control verification: confirmed non-triggering on legitimate Web3 activity (Scenario A), benign contract interactions followed by network activity, inverted event timing, and incomplete sequences
+#### Milestone 6 — Detection & Explainable Weighted Scoring
+- `RuleBasedScorer` (`src/detection/scoring.py`) — transparent, explainable heuristic scoring model evaluating factual correlated evidence:
+  - Endpoint/process context: **+10**
+  - RPC interaction: **+10**
+  - Contract interaction: **+15**
+  - Suspicious data retrieval: **+20**
+  - C2/configuration indicator: **+20**
+  - Matched subsequent network activity: **+25**
+  - Maximum conceptual score = **100**, Default threshold = **80** (configurable heuristic weights, not ML parameters or universal constants)
+- `DetectionEngine` — deterministic detection engine evaluating factual correlated sequences against rule sets and scoring results
+- `SyntheticC2SequenceRule` (`RULE-CHAINC2-001`) — deterministic rule verifying observable behavioral conditions and score threshold
+- Structured `DetectionResult` — factual evidence summaries preserving matched conditions, scoring contributions, matched/unmatched rules, time deltas, and execution timeline
+- Negative-control verification: Scenario A (Score: 35.0) and Scenario C (Score: 35.0) both score well below the 80.0 threshold and result in `NOT_TRIGGERED`
 
 #### Milestone 7 — Detection Evaluation
 - `DetectionEvaluator` — configurable experimental evaluation orchestrator for repeated execution and statistical analysis
 - Structured evaluation models: `ExperimentRecord`, `EvaluationMetrics`, and `AggregateEvaluationResult` with safe zero-denominator handling
 - Benchmark evaluation dataset persisted to `data/evaluation/evaluation_results.json` and research summary artifacts in `results/detection/`
-- Empirical laboratory benchmark (20 runs): 100% detection rate (recall), 0.0% false-positive rate, 100% precision, 100% accuracy, ~0.048ms average detection latency
+- Historical 20-run A/B benchmark preserved at `data/evaluation/historical_ab_20_evaluation_results.json`
+- Empirical 30-run 3-scenario benchmark (10 Scenario A, 10 Scenario B, 10 Scenario C): 100.0% detection rate (recall), 0.0% false-positive rate ($FP=0$ across both negative classes), 100.0% precision, 100.0% specificity, 100.0% accuracy, ~0.102ms average detection latency
 
 ### Completed Phase 2 Milestones
 
@@ -149,7 +161,7 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 - Structured response models: `DefensePlan`, `MitigationAction`, `DefenseExecutionRecord` in `src/protection/models.py`
 - Abstract responder interfaces: `BaseMitigationHandler`, `BaseEvidencePreserver` in `src/protection/interfaces.py`
 - Policy engine: `DefensivePolicyEngine` in `src/protection/policy.py` mapping detection evidence to layered defense actions with safety boundary enforcement
-- Strict negative-control bypass: confirmed non-triggered detections (Scenario A) yield zero defensive actions (`status=SKIPPED`)
+- Strict negative-control bypass: confirmed non-triggered detections (Scenario A and Scenario C) yield zero defensive actions (`status=SKIPPED`)
 
 #### Milestone 9 — Controlled Protection / Mitigation
 - Concrete mitigation handlers adhering to `BaseMitigationHandler`:
@@ -157,6 +169,7 @@ All blockchain activity is local and synthetic. No public blockchains are used.
   - `NetworkContainmentHandler`: Application-layer containment on `LocalHttpTargetServer` rejecting synthetic `/beacon` requests with HTTP 403 while preserving `/health`
   - `ProcessIsolationHandler`: Cooperative laboratory scenario worker isolation via `ScenarioWorkerRegistry`, strictly refusing arbitrary host process termination
   - `EvidenceSnapshotHandler`: Immutable forensic evidence bundle generation under `data/evidence/` with SHA-256 integrity checksums
+
 #### Milestone 10 — Protection Evaluation
 - `ProtectionEvaluator` — configurable experimental orchestrator evaluating defensive responses across repeated runs
 - Structured evaluation models: `ProtectionExperimentRecord`, `ProtectionEvaluationMetrics`, and `AggregateProtectionEvaluationResult`
@@ -175,10 +188,10 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 #### Milestone 11 — Final Research Analysis
 - Comprehensive final research reports synthesized under `reports/final/`:
   - `FINAL_RESEARCH_ANALYSIS.md`: Complete academic synthesis covering RQ1 and RQ2, methodologies, observations, limitations, and security implications
-  - `DETECTION_ANALYSIS.md`: Granular analysis of Phase 1 detection pipeline, evidence chains, and negative-control validation
+  - `DETECTION_ANALYSIS.md`: Granular analysis of Phase 1 detection pipeline, evidence chains, scoring model, and 3-scenario validation
   - `PROTECTION_ANALYSIS.md`: Granular analysis of Phase 2 defensive response, containment handlers, latency profiling, and rollback
 - Consolidated machine-readable research summary: `results/final/research_summary.json`
-- Definitive answers established for both core research questions (RQ1: Detectable with 100% recall and 0% FPR in testbed; RQ2: Contained via application-layer controls in 2.09ms average latency while preserving 100% of legitimate traffic)
+- Definitive answers established for both core research questions (RQ1: Detectable with 100% recall and 0% FPR across both legitimate Web3 classes in testbed; RQ2: Contained via application-layer controls in 2.09ms average latency while preserving 100% of legitimate traffic)
 
 ---
 
@@ -187,12 +200,12 @@ All blockchain activity is local and synthetic. No public blockchains are used.
 ```
 src/
 ├── blockchain/          # Hardhat environment, Solidity contracts, deployment, tests
-│   ├── contracts/       # C2DataStore.sol, BenignDAppContract.sol
+│   ├── contracts/       # C2DataStore.sol, BenignDAppContract.sol, LegitimateDAppContract.sol
 │   ├── scripts/         # Contract deployment script
-│   └── test/            # Hardhat/Mocha contract tests
+│   └── test/            # Hardhat/Mocha contract tests (35 passing)
 ├── collectors/          # Telemetry collectors (endpoint, RPC, blockchain, network)
 ├── correlation/         # Cross-layer correlation engine, sequence & transition models
-├── detection/           # Explainable rule-based detection engine, rules, and result models
+├── detection/           # Explainable rule-based detection engine, scoring engine, rules, models
 ├── evaluation/          # Experimental detection evaluation orchestrator, metrics, and report models
 ├── http_target/         # Controlled local HTTP target server (127.0.0.1)
 ├── models/              # SentinelEvent Pydantic v2 schema and sub-models
@@ -206,12 +219,12 @@ src/
 │   ├── policy.py        # DefensivePolicyEngine mapping detections to defense plans
 │   └── process_registry.py # Controlled scenario worker registry (cooperative isolation)
 ├── rpc_proxy/           # aiohttp JSON-RPC telemetry proxy with application-layer contract filtering
-├── scenarios/           # Laboratory scenarios (Scenario A benign, Scenario B C2)
+├── scenarios/           # Laboratory scenarios (Scenario A benign, Scenario B C2, Scenario C DApp baseline)
 │   ├── definitions/     # Concrete scenario implementations
 │   ├── payload.py       # Safe inert C2 payload schema and validator
 │   └── runner.py        # Scenario execution orchestrator
 └── utils/               # UUID generation, structured logging
-tests/                   # Python unit tests (161 tests covering collectors, correlation, detection, evaluation, protection, scenarios, final analysis)
+tests/                   # Python unit tests covering collectors, correlation, scoring, detection, evaluation, protection, scenarios
 docs/                    # Architecture documentation, development plan, defensive response specification
 reports/
 └── final/               # Final research analysis reports (FINAL_RESEARCH_ANALYSIS.md, DETECTION_ANALYSIS.md, PROTECTION_ANALYSIS.md)
@@ -230,12 +243,15 @@ results/
 
 | Test Suite / Benchmark | Metric / Count | Result | Status |
 |:---|:---:|:---:|:---:|
-| Python Unit Tests (all modules) | 161 tests | 100% passing (9.12s) | ✅ Passing |
-| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (838ms) | ✅ Passing |
-| Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN]$) | ✅ Measured |
-| Scenario A False-Positive Rate | 10 negative runs | 0.0% ($FP / [FP+TN]$) | ✅ Measured |
-| Detection Precision | 10 triggered runs | 100.0% ($TP / [TP+FP]$) | ✅ Measured |
-| Detection Processing Latency | 20 evaluated runs | ~0.048ms avg (min: 0.025ms, max: 0.092ms) | ✅ Measured |
+| Python Unit Tests (all modules) | Full suite | 100% passing | ✅ Passing |
+| Hardhat Contract Tests (Solidity) | 35 tests | 100% passing | ✅ Passing |
+| Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN] = 10/10$) | ✅ Measured |
+| Legitimate Web3 False-Positive Rate | 20 negative runs (10 A + 10 C) | 0.0% ($FP / [FP+TN] = 0/20$) | ✅ Measured |
+| Detection Precision | 10 triggered runs | 100.0% ($TP / [TP+FP] = 10/10$) | ✅ Measured |
+| Specificity (TNR) | 20 negative runs | 100.0% ($TN / [TN+FP] = 20/20$) | ✅ Measured |
+| Detection Accuracy | 30 evaluated runs | 100.0% ($[TP+TN] / \text{total} = 30/30$) | ✅ Measured |
+| Detection F1 Score | 30 evaluated runs | 1.000 ($2 \cdot P \cdot R / [P+R]$) | ✅ Measured |
+| Detection Processing Latency | 30 evaluated runs | ~0.102ms avg (min: 0.045ms, max: 0.688ms) | ✅ Measured |
 | Mitigation Success Rate | 10 positive runs (40 actions) | 100.0% ($40/40$ verified) | ✅ Measured |
 | RPC Blocking Rate | 10 positive runs | 100.0% ($10/10$ blocked) | ✅ Measured |
 | Beacon Blocking Rate | 10 positive runs | 100.0% ($10/10$ rejected HTTP 403) | ✅ Measured |
@@ -251,7 +267,7 @@ results/
 
 ## Project Status
 
-**Current Research Phase:** Phase 1 & Phase 2 Complete (Milestones 1–11 Fully Implemented)<br>
+**Current Research Phase:** Phase 1 & Phase 2 Complete (Milestones 1–11 Fully Implemented, Architecture Locked)<br>
 **Next Core Target:** Master Dashboard (Final Core Deliverable)
 
 | Research Phase | Milestone | Focus Area | Status |
@@ -259,10 +275,10 @@ results/
 | **Phase 1 — Detection** | Milestone 1 | Project Infrastructure | ✅ Complete |
 | **Phase 1 — Detection** | Milestone 2 | Synthetic Blockchain Environment | ✅ Complete |
 | **Phase 1 — Detection** | Milestone 3 | Telemetry Foundation | ✅ Complete |
-| **Phase 1 — Detection** | Milestone 4 | Controlled Detection Scenarios | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 4 | Controlled Detection Scenarios (A, B, C) | ✅ Complete |
 | **Phase 1 — Detection** | Milestone 5 | Cross-Layer Correlation | ✅ Complete |
-| **Phase 1 — Detection** | Milestone 6 | Detection | ✅ Complete |
-| **Phase 1 — Detection** | Milestone 7 | Detection Evaluation | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 6 | Detection & Explainable Weighted Scoring | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 7 | Detection Evaluation (30 Runs) | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ✅ Complete |

@@ -60,10 +60,10 @@ class TestFinalResearchAnalysis:
             source = json.load(f)
 
         p1 = summary["phase_1"]
-        assert p1["total_experiments"] == source["total_experiments"] == 20
-        assert p1["successful_runs"] == source["successful_runs"] == 20
+        assert p1["total_experiments"] == source["total_experiments"] == 30
+        assert p1["successful_runs"] == source["successful_runs"] == 30
         assert p1["confusion_matrix"]["true_positives"] == source["true_positives"] == 10
-        assert p1["confusion_matrix"]["true_negatives"] == source["true_negatives"] == 10
+        assert p1["confusion_matrix"]["true_negatives"] == source["true_negatives"] == 20
         assert p1["confusion_matrix"]["false_positives"] == source["false_positives"] == 0
         assert p1["confusion_matrix"]["false_negatives"] == source["false_negatives"] == 0
         assert p1["metrics"]["detection_rate"] == source["detection_rate"] == 1.0
@@ -139,5 +139,5 @@ class TestFinalResearchAnalysis:
         assert "rq1" in rqs and "rq2" in rqs
         assert rqs["rq1"]["target_phase"] == "Phase 1 — Detection"
         assert rqs["rq2"]["target_phase"] == "Phase 2 — Protection"
-        assert "detectable" in rqs["rq1"]["question"].lower()
+        assert "detect" in rqs["rq1"]["question"].lower()
         assert "defensive measures" in rqs["rq2"]["question"].lower()

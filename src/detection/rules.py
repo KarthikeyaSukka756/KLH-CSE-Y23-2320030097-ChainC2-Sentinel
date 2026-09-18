@@ -16,6 +16,7 @@ from src.detection.models import (
     DetectionResult,
     DetectionStatus,
 )
+from src.detection.scoring import RuleBasedScorer
 
 logger = logging.getLogger("chainc2_sentinel.detection.rules")
 
@@ -68,8 +69,11 @@ class SyntheticC2SequenceRule(BaseDetectionRule):
         "retrieve synthetic C2 configuration from C2DataStore followed by local network communication."
     )
 
+    def __init__(self, scorer: Optional[RuleBasedScorer] = None) -> None:
+        self.scorer = scorer or RuleBasedScorer()
+
     def evaluate(self, sequence: CorrelatedSequence) -> DetectionResult:
-        """Evaluate the 7 observable conditions against the sequence."""
+        """Evaluate the 7 observable conditions and calculate explainable weighted score."""
         conditions: list[DetectionConditionMatch] = []
         evidence: dict[str, Any] = {
             "correlation_id": sequence.correlation_id,
@@ -77,6 +81,9 @@ class SyntheticC2SequenceRule(BaseDetectionRule):
             "scenario_id": sequence.scenario_id,
             "duration_ms": sequence.duration_ms,
         }
+
+        # Calculate explainable weighted score
+        scoring_result = self.scorer.score(sequence)
 
         # Condition 1: Endpoint process event exists
         has_endpoint = sequence.endpoint_event is not None
@@ -267,5 +274,10 @@ class SyntheticC2SequenceRule(BaseDetectionRule):
             matched_conditions=matched,
             unmatched_conditions=unmatched,
             evidence=evidence,
+            total_score=scoring_result.total_score,
+            threshold=scoring_result.threshold,
+            score_contributions=scoring_result.contributions,
+            matched_scoring_rules=scoring_result.matched_scoring_rules,
+            unmatched_scoring_rules=scoring_result.unmatched_scoring_rules,
             explanation=explanation,
         )

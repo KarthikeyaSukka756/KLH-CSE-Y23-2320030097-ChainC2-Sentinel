@@ -16,11 +16,11 @@ Decentralized smart-contract platforms introduce new operational surfaces for co
 The **ChainC2 Sentinel** research project investigates whether such blockchain-mediated C2 behavioral patterns are detectable through host and network telemetry, and what controlled defensive mitigations can be executed once detected.
 
 The research is organized strictly into two sequential phases:
-1. **Phase 1 — Detection:** Focuses on **Research Question 1 (RQ1)**: *"Are blockchain-mediated C2 behaviors detectable?"*
+1. **Phase 1 — Detection:** Focuses on **Research Question 1 (RQ1)**: *"Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?"*
 2. **Phase 2 — Protection:** Focuses on **Research Question 2 (RQ2)**: *"Once the behavior is detected, what defensive measures can be applied?"*
 
 Across controlled, reproducible laboratory experiments executed on a local Hardhat Ethereum Virtual Machine (EVM) testbed:
-- **Phase 1 Detection Evaluation (20 runs):** Achieved **100.0% Detection Rate (Recall)** across 10 positive control runs and **0.0% False-Positive Rate** across 10 negative control runs, with an average rule processing latency of **0.048 ms**.
+- **Phase 1 Detection Evaluation (30 runs):** Achieved **100.0% Detection Rate (Recall)** across 10 positive control runs and **0.0% False-Positive Rate** across 20 negative control runs (10 Scenario A and 10 Scenario C), with an average rule processing latency of **0.102 ms**.
 - **Phase 2 Protection Evaluation (22 runs):** Achieved **100.0% Mitigation Success Rate** (40/40 actions verified), **100.0% RPC Blocking Rate**, **100.0% Beacon Blocking Rate**, **100.0% Process Isolation Success Rate**, **100.0% Legitimate Traffic Preservation**, and **0.0% False Mitigation Rate**, with an average containment latency of **2.091 ms** and full rollback verification.
 
 These findings demonstrate that cross-layer causal correlation can reliably separate synthetic blockchain-mediated C2 sequences from legitimate Web3 dApp activity, and that layered application-layer defensive controls can rapidly contain suspicious activity while preserving benign operations.
@@ -32,7 +32,7 @@ These findings demonstrate that cross-layer causal correlation can reliably sepa
 The research is structured around two central research questions:
 
 ### Research Question 1 (RQ1) — Phase 1: Detection
-> *"Are blockchain-mediated C2 behaviors detectable?"*
+> *"Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?"*
 - **Hypothesis:** By correlating endpoint process execution, JSON-RPC queries, smart contract interactions, and subsequent network activity across time, a defensive monitoring pipeline can distinguish blockchain-mediated C2-like sequences from legitimate decentralized application interactions without flagging benign blockchain activity.
 
 ### Research Question 2 (RQ2) — Phase 2: Protection
@@ -53,7 +53,7 @@ The research operates under strict ethical, technical, and laboratory safeguards
 
 ## 4. Experimental Methodology
 
-The experimental framework consists of four primary telemetry layers and two controlled operational scenarios:
+The experimental framework consists of four primary telemetry layers and controlled operational scenarios across both phases:
 
 ### Telemetry Pipeline
 ```
@@ -67,6 +67,9 @@ The experimental framework consists of four primary telemetry layers and two con
           │
           ▼
 [ Cross-Layer Engine ]  ──> Temporal & Causal Correlation (Delta Time Δt)
+          │
+          ▼
+[ Scoring Engine ]      ──> Explainable Weighted Scoring (Threshold: 80.0)
           │
           ▼
 [ Detection Engine ]    ──> Rule Evaluation (RULE-CHAINC2-001)
@@ -84,45 +87,48 @@ The experimental framework consists of four primary telemetry layers and two con
 |:---|:---:|:---|:---:|:---:|
 | **Scenario A** | Legitimate Web3 dApp | `BenignDAppContract` | Zero follow-up network activity | `BENIGN` (Negative Control) |
 | **Scenario B** | Synthetic C2-Like Activity | `C2DataStore` | Controlled HTTP beacon to `127.0.0.1` | `SYNTHETIC_C2` (Positive Control) |
-| **Scenario C** | Controlled Fault Injection | Unregistered Process | N/A (Tests handler refusal & error handling) | `FAULT_HANDLED` (Safety Control) |
+| **Scenario C** | Legitimate DApp Baseline | `LegitimateDAppContract` | Zero follow-up network activity | `LEGITIMATE_DAPP` (Negative Control) |
+
+*(Note: Phase 2 Protection evaluation additionally tests 2 controlled fault-injection runs to verify handler refusal boundaries and error safety).*
 
 ---
 
 ## 5. Phase 1 — Detection Analysis
 
-Phase 1 evaluated whether the cross-layer correlation of multi-source telemetry can detect blockchain-mediated C2-like sequences while avoiding false alarms against legitimate Web3 dApp baseline activity.
+Phase 1 evaluated whether the cross-layer correlation of multi-source telemetry combined with explainable rule-based weighted scoring can detect blockchain-mediated C2-like sequences while avoiding false alarms against basic and realistic legitimate Web3 dApp baseline activity.
 
-### Detection Rule (`RULE-CHAINC2-001`)
-The rule evaluates 7 deterministic observable conditions:
-1. `cond_endpoint`: Endpoint process execution observed.
-2. `cond_rpc`: JSON-RPC query captured.
-3. `cond_blockchain`: Smart contract interaction recorded.
-4. `cond_c2datastore`: Targeted contract matches `C2DataStore`.
-5. `cond_network`: Follow-up network connection observed.
-6. `cond_network_timing`: Network event occurred strictly after blockchain interaction ($\Delta t > 0$).
-7. `cond_causal_timeline`: Monotonic timestamp ordering across all 4 stages.
+### Explainable Rule-Based Weighted Scoring Model
+Rather than relying on opaque ML models or simple contract identity, the detector evaluates factual evidence contributions:
+- Endpoint Process Context: **+10**
+- RPC Gateway Interaction: **+10**
+- Contract Interaction: **+15**
+- Suspicious Data Retrieval: **+20**
+- C2/Configuration Indicator: **+20**
+- Matched Subsequent Network Activity: **+25**
+- Maximum Conceptual Score: **100**, Default Threshold: **80.0**
 
-### Empirical Detection Results (Benchmark: 20 Runs)
+### Empirical Detection Results (Benchmark: 30 Runs)
 *Source Artifact: [`results/detection/evaluation_summary.json`](file:///c:/Users/KARTHIKEYA/OneDrive/Desktop/Capstone%20Project%20-%201/KLH-CSE-Y23-2320030097-ChainC2-Sentinel/results/detection/evaluation_summary.json)*
 
 | Metric | Measured Value | Formula / Denominator | Interpretation |
 |:---|:---:|:---|:---|
-| **Total Experiments** | 20 | 10 Scenario A + 10 Scenario B | Balanced evaluation suite |
+| **Total Experiments** | 30 | 10 Scenario A + 10 Scenario B + 10 Scenario C | Balanced multi-scenario suite |
 | **True Positives ($TP$)** | 10 | Scenario B triggered | 100% positive control identification |
-| **True Negatives ($TN$)** | 10 | Scenario A not triggered | 100% negative control baseline preservation |
-| **False Positives ($FP$)** | 0 | Scenario A incorrectly triggered | Zero false alarms on benign dApps |
+| **True Negatives ($TN$)** | 20 | Scenario A (10) + Scenario C (10) not triggered | 100% negative control baseline preservation |
+| **False Positives ($FP$)** | 0 | Neither Scenario A nor C triggered | Zero false alarms on legitimate Web3 |
 | **False Negatives ($FN$)** | 0 | Scenario B missed | Zero missed detections |
 | **Detection Rate (Recall)** | **100.0%** | $TP / (TP + FN)$ | Perfect sensitivity on testbed sequences |
-| **False-Positive Rate** | **0.0%** | $FP / (FP + TN)$ | Zero false-alarm fall-out |
+| **False-Positive Rate** | **0.0%** | $FP / (FP + TN)$ | Zero false-alarm fall-out across 20 negatives |
 | **Precision** | **100.0%** | $TP / (TP + FP)$ | Triggered detections are 100% reliable |
+| **Specificity (TNR)** | **100.0%** | $TN / (TN + FP)$ | Correctly cleared basic and realistic dApps |
 | **Accuracy** | **100.0%** | $(TP + TN) / \text{total}$ | Complete classification correctness |
 | **F1 Score** | **1.000** | $2 \cdot (P \cdot R) / (P + R)$ | Optimal harmonic balance |
-| **Average Detection Latency** | **0.048 ms** | $\text{mean}(\text{latency})$ | Sub-millisecond rule processing |
-| **Min / Max Latency** | **0.025 ms / 0.092 ms** | Range of rule evaluations | Highly deterministic timing |
+| **Average Detection Latency** | **0.102 ms** | $\text{mean}(\text{latency})$ | Sub-millisecond rule processing |
+| **Min / Max Latency** | **0.045 ms / 0.688 ms** | Range of rule evaluations | Highly deterministic timing |
 
 ### Key Analytical Takeaways for Phase 1
-- **Negative Control Significance:** Legitimate Web3 activity (Scenario A) generated process, RPC, and smart contract telemetry identical in protocol structure to Scenario B. However, because it lacked follow-up network beaconing, it yielded $FP = 0$, demonstrating that blockchain interaction alone is not flagged as malicious.
-- **Cross-Layer Causality:** An isolated blockchain query looks like normal decentralized finance (DeFi) or governance activity. Only when correlated with subsequent network connections originating from the same endpoint context does the signature emerge.
+- **Negative Control Significance:** Both basic legitimate Web3 activity (Scenario A, score 35.0) and realistic multi-step DApp task-registry activity (Scenario C, score 35.0) generated extensive process, RPC, and smart contract telemetry. Because neither executed subsequent beaconing, both scored well below the 80.0 threshold, yielding $FP = 0$.
+- **Cross-Layer Causality:** An isolated blockchain query or complex DApp transaction workflow looks like normal decentralized application activity. Only when correlated with subsequent network connections originating from the same endpoint context does the signature emerge.
 
 ---
 
@@ -234,9 +240,9 @@ The contribution of **ChainC2 Sentinel** is **not** the discovery of blockchain-
 ## 12. Final Conclusions
 
 ### Answer to Research Question 1 (RQ1)
-> *"Are blockchain-mediated C2 behaviors detectable?"*
+> *"Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?"*
 
-**Conclusion:** **Yes.** Within a controlled laboratory environment, blockchain-mediated C2-like sequences can be detected with high reliability (100.0% detection rate, 0.0% false-positive rate, ~0.048 ms latency) when host endpoint activity, RPC interactions, and subsequent network beacons are temporally and causally correlated. Negative-control testing confirms that legitimate Web3 dApp interactions are not erroneously classified as malicious.
+**Conclusion:** **Yes.** Within a controlled laboratory environment, blockchain-mediated C2-like sequences can be detected with high reliability (100.0% detection rate, 0.0% false-positive rate across both basic and realistic DApp negative controls, ~0.102 ms latency) when host endpoint activity, RPC interactions, and subsequent network beacons are temporally and causally correlated using explainable weighted scoring. Negative-control testing confirms that legitimate Web3 dApp interactions (Scenario A and Scenario C) are not erroneously classified as malicious.
 
 ### Answer to Research Question 2 (RQ2)
 > *"Once the behavior is detected, what defensive measures can be applied?"*
@@ -261,9 +267,9 @@ All metrics, rates, and latencies reported in this analysis are directly traceab
 
 ### Test Verification Commands
 ```bash
-# Execute Python unit and integration test suite (154+ passing)
+# Execute Python unit and integration test suite
 python -m pytest tests/ -v --strict-markers -m unit
 
-# Execute Hardhat smart contract verification suite (26 passing)
+# Execute Hardhat smart contract verification suite (35 passing)
 npx hardhat test
 ```

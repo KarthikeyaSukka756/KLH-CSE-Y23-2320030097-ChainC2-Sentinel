@@ -65,6 +65,21 @@ class DetectionResult(BaseModel):
     evidence: dict[str, Any] = Field(
         default_factory=dict, description="Observable evidence dictionary (contract, destination, latency)"
     )
+    total_score: float = Field(
+        default=0.0, description="Cumulative explainable heuristic detection score (0-100)"
+    )
+    threshold: float = Field(
+        default=80.0, description="Configurable deterministic threshold required for detection candidate"
+    )
+    score_contributions: list[dict[str, Any]] = Field(
+        default_factory=list, description="Detailed score contribution breakdown per heuristic scoring rule"
+    )
+    matched_scoring_rules: list[str] = Field(
+        default_factory=list, description="List of scoring rule IDs that contributed positively to the score"
+    )
+    unmatched_scoring_rules: list[str] = Field(
+        default_factory=list, description="List of scoring rule IDs that did not contribute to the score"
+    )
     explanation: str = Field(
         ..., description="Factual, transparent explanation of why the rule did or did not trigger"
     )
@@ -72,3 +87,12 @@ class DetectionResult(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp when detection evaluation took place",
     )
+    timestamp: Optional[datetime] = Field(
+        default=None,
+        description="Timestamp alias matching evaluated_at for dashboard schema compatibility",
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        """Ensure timestamp is synchronized with evaluated_at."""
+        if self.timestamp is None:
+            self.timestamp = self.evaluated_at

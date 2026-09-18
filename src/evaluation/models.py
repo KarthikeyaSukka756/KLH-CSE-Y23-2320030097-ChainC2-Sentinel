@@ -23,6 +23,7 @@ class GroundTruth(str, enum.Enum):
 
     BENIGN = "benign"  # Scenario A negative control (legitimate Web3 activity)
     SYNTHETIC_C2 = "synthetic_c2"  # Scenario B positive control (synthetic C2-like activity)
+    LEGITIMATE_DAPP = "legitimate_dapp"  # Scenario C negative control (legitimate DApp baseline)
 
 
 class ClassificationVerdict(str, enum.Enum):
