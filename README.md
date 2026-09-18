@@ -172,6 +172,14 @@ All blockchain activity is local and synthetic. No public blockchains are used.
   - **Containment Latency:** 2.09ms avg (min: 1.49ms, max: 3.56ms)
 - Machine-readable raw dataset persisted at `data/evaluation/protection_evaluation.json` and processed research artifacts in `results/protection/`
 
+#### Milestone 11 — Final Research Analysis
+- Comprehensive final research reports synthesized under `reports/final/`:
+  - `FINAL_RESEARCH_ANALYSIS.md`: Complete academic synthesis covering RQ1 and RQ2, methodologies, observations, limitations, and security implications
+  - `DETECTION_ANALYSIS.md`: Granular analysis of Phase 1 detection pipeline, evidence chains, and negative-control validation
+  - `PROTECTION_ANALYSIS.md`: Granular analysis of Phase 2 defensive response, containment handlers, latency profiling, and rollback
+- Consolidated machine-readable research summary: `results/final/research_summary.json`
+- Definitive answers established for both core research questions (RQ1: Detectable with 100% recall and 0% FPR in testbed; RQ2: Contained via application-layer controls in 2.09ms average latency while preserving 100% of legitimate traffic)
+
 ---
 
 ## Project Structure
@@ -203,14 +211,17 @@ src/
 │   ├── payload.py       # Safe inert C2 payload schema and validator
 │   └── runner.py        # Scenario execution orchestrator
 └── utils/               # UUID generation, structured logging
-tests/                   # Python unit tests (154 tests covering collectors, correlation, detection, evaluation, protection, scenarios)
+tests/                   # Python unit tests (161 tests covering collectors, correlation, detection, evaluation, protection, scenarios, final analysis)
 docs/                    # Architecture documentation, development plan, defensive response specification
+reports/
+└── final/               # Final research analysis reports (FINAL_RESEARCH_ANALYSIS.md, DETECTION_ANALYSIS.md, PROTECTION_ANALYSIS.md)
 data/
 ├── evaluation/          # Machine-readable evaluation reports (detection & protection JSON)
 └── evidence/            # Preserved immutable forensic evidence snapshots (JSON)
 results/
 ├── detection/           # Processed detection research artifacts (summary JSON, metrics CSV, experiment history CSV)
-└── protection/          # Processed protection research artifacts (summary JSON, metrics CSV, experiment history CSV)
+├── protection/          # Processed protection research artifacts (summary JSON, metrics CSV, experiment history CSV)
+└── final/               # Consolidated final research summary JSON (research_summary.json)
 ```
 
 ---
@@ -219,8 +230,8 @@ results/
 
 | Test Suite / Benchmark | Metric / Count | Result | Status |
 |:---|:---:|:---:|:---:|
-| Python Unit Tests (all modules) | 154 tests | 100% passing (11.02s) | ✅ Passing |
-| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (855ms) | ✅ Passing |
+| Python Unit Tests (all modules) | 161 tests | 100% passing (9.12s) | ✅ Passing |
+| Hardhat Contract Tests (Solidity) | 26 tests | 100% passing (838ms) | ✅ Passing |
 | Scenario B Detection Rate (Recall) | 10 positive runs | 100.0% ($TP / [TP+FN]$) | ✅ Measured |
 | Scenario A False-Positive Rate | 10 negative runs | 0.0% ($FP / [FP+TN]$) | ✅ Measured |
 | Detection Precision | 10 triggered runs | 100.0% ($TP / [TP+FP]$) | ✅ Measured |
@@ -240,8 +251,8 @@ results/
 
 ## Project Status
 
-**Current Research Phase:** Phase 2 — Protection (Milestones 8, 9, & 10 Complete)  
-**Next Research Target:** Phase 2 — Protection, Milestone 11 — Final Research Analysis  
+**Current Research Phase:** Phase 1 & Phase 2 Complete (Milestones 1–11 Fully Implemented)<br>
+**Next Core Target:** Master Dashboard (Final Core Deliverable)
 
 | Research Phase | Milestone | Focus Area | Status |
 |:---|:---|:---|:---|
@@ -255,4 +266,5 @@ results/
 | **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | ✅ Complete |
 | **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | ✅ Complete |
-| **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | ⏳ Next Target |
+| **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | ✅ Complete |
+| **Synthesis & UI** | **Deliverable** | **Master Dashboard** | ⏳ **Next / Final Core Deliverable** |

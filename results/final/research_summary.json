@@ -1,0 +1,170 @@
+{
+  "project": {
+    "name": "ChainC2 Sentinel",
+    "title": "ChainC2 Sentinel: A Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels",
+    "repository": "KLH-CSE-Y23-2320030097-ChainC2-Sentinel",
+    "milestone": "Milestone 11 — Final Research Analysis",
+    "structure": "Two-Phase Research Architecture (Phase 1 — Detection, Phase 2 — Protection)"
+  },
+  "research_questions": {
+    "rq1": {
+      "question": "Are blockchain-mediated C2 behaviors detectable?",
+      "target_phase": "Phase 1 — Detection",
+      "conclusion": "Yes, within the controlled laboratory environment, blockchain-mediated C2-like sequences are detectable with 100.0% recall and 0.0% false-positive rate across the evaluated synthetic testbed when endpoint, RPC/blockchain, and network telemetry are temporally and contextually correlated."
+    },
+    "rq2": {
+      "question": "Once the behavior is detected, what defensive measures can be applied?",
+      "target_phase": "Phase 2 — Protection",
+      "conclusion": "Controlled application-layer mitigations (RPC smart contract filtering, local network beacon containment, cooperative process isolation, and forensic evidence preservation) can successfully contain subsequent synthetic C2 activity with a 100.0% mitigation success rate and 2.091 ms average latency while preserving 100.0% of legitimate Web3 and localhost traffic."
+    }
+  },
+  "phase_1": {
+    "focus": "Detection",
+    "research_question": "Are blockchain-mediated C2 behaviors detectable?",
+    "evaluation_id": "eval-53e4910d-a742-46fc-8188-3b6eb7c5f566",
+    "rule_id": "RULE-CHAINC2-001",
+    "rule_version": "1.0.0",
+    "evidence_chain": [
+      "Endpoint Process",
+      "Blockchain/RPC Interaction",
+      "Transaction / Smart Contract",
+      "Retrieved Synthetic C2 Data / Configuration",
+      "Subsequent Network Activity",
+      "Cross-Layer Correlation",
+      "Detection",
+      "Evidence / Alert"
+    ],
+    "scenario_breakdown": {
+      "scenario_a_benign": 10,
+      "scenario_b_synthetic_c2": 10
+    },
+    "total_experiments": 20,
+    "successful_runs": 20,
+    "failed_runs": 0,
+    "confusion_matrix": {
+      "true_positives": 10,
+      "true_negatives": 10,
+      "false_positives": 0,
+      "false_negatives": 0
+    },
+    "metrics": {
+      "detection_rate": 1.0,
+      "false_positive_rate": 0.0,
+      "precision": 1.0,
+      "true_negative_rate": 1.0,
+      "accuracy": 1.0,
+      "f1_score": 1.0
+    },
+    "detection_latency": {
+      "average_ms": 0.048005000280682,
+      "min_ms": 0.025200002710334957,
+      "max_ms": 0.09180000051856041
+    },
+    "source_artifacts": [
+      "data/evaluation/evaluation_results.json",
+      "results/detection/evaluation_summary.json",
+      "results/detection/detection_metrics.csv",
+      "results/detection/experiment_results.csv"
+    ]
+  },
+  "phase_2": {
+    "focus": "Protection",
+    "research_question": "Once the behavior is detected, what defensive measures can be applied?",
+    "evaluation_id": "eval-prot-8fd434fa-4c9d-41b8-bebe-7c118bf3a024",
+    "rule_id": "RULE-CHAINC2-001",
+    "defense_lifecycle": [
+      "Detection",
+      "Safety Boundary Validation",
+      "Evidence Preservation",
+      "Network Containment",
+      "RPC Filtering",
+      "Process Isolation",
+      "Verification",
+      "Rollback / Audit"
+    ],
+    "scenario_breakdown": {
+      "scenario_a_benign": 10,
+      "scenario_b_synthetic_c2": 10,
+      "scenario_c_fault_injection": 2
+    },
+    "total_experiments": 22,
+    "successful_experiments": 22,
+    "failed_experiments": 0,
+    "metrics": {
+      "experiment_success_rate": 1.0,
+      "mitigation_success_rate": 1.0,
+      "rpc_blocking_rate": 1.0,
+      "beacon_blocking_rate": 1.0,
+      "process_isolation_success_rate": 1.0,
+      "legitimate_traffic_preservation_rate": 1.0,
+      "false_mitigation_rate": 0.0,
+      "rollback_success_rate": 1.0,
+      "evidence_preservation_rate": 1.0
+    },
+    "containment_latency": {
+      "min_ms": 1.49,
+      "max_ms": 3.564,
+      "avg_ms": 2.091,
+      "median_ms": 1.755
+    },
+    "source_artifacts": [
+      "data/evaluation/protection_evaluation.json",
+      "results/protection/evaluation_summary.json",
+      "results/protection/protection_metrics.csv",
+      "results/protection/experiment_results.csv",
+      "data/evidence/"
+    ]
+  },
+  "combined_findings": {
+    "detection_protection_coupling": "Detection (Observe -> Correlate -> Detect -> Preserve Evidence) and Protection (Respond -> Contain -> Verify -> Roll Back / Audit) operate as decoupled, explainable stages connected via immutable forensic evidence bundles.",
+    "distinction_of_capabilities": "Detection capability quantifies the ability to distinguish synthetic C2 behavior from legitimate Web3 baseline. Protection capability quantifies the speed, effectiveness, and precision of application-layer containment without disrupting benign activity.",
+    "role_of_evidence": "Every detection candidate produces a cryptographic SHA-256 evidence bundle prior to mitigation, ensuring non-repudiation and forensic audibility."
+  },
+  "observations": [
+    "Blockchain interaction by itself is insufficient to establish malicious behavior; legitimate dApps exhibit similar transaction patterns.",
+    "Cross-layer evidence provides necessary context that cannot be derived from any single layer in isolation.",
+    "Temporal and causal ordering (Endpoint -> RPC -> Contract Query -> Subsequent Network Beacon) is essential to eliminate false positives.",
+    "The benign Web3 scenario (Scenario A) serves as an indispensable negative control to confirm zero false alarms and zero false mitigations.",
+    "The controlled synthetic C2 scenario (Scenario B) successfully produced the complete four-layer causal telemetry chain.",
+    "Application-layer defensive controls can be evaluated safely and deterministically within a local laboratory testbed.",
+    "Evidence preservation must precede active mitigation to ensure forensics are preserved prior to process or network containment.",
+    "Active post-mitigation verification is required rather than assuming an action succeeded.",
+    "Automated rollback provides baseline restoration in the laboratory without destroying preserved evidence bundles.",
+    "Fault injection demonstrates robust defensive failure handling without manipulating arbitrary operating-system processes."
+  ],
+  "limitations": [
+    "Controlled local laboratory environment; does not simulate enterprise network noise, jitter, or multi-tenant traffic.",
+    "Synthetic C2 behavior using inert metadata rather than real-world malware or active exploitation.",
+    "Limited scenario set consisting of predefined Scenario A, Scenario B, and controlled fault injection.",
+    "Limited experiment sample size (20 detection runs, 22 protection runs).",
+    "Single local Hardhat EVM testbed (Chain ID 31337) without multi-chain or layer-2 environments.",
+    "Synthetic smart contracts (C2DataStore and BenignDAppContract) with fixed interfaces.",
+    "Application-layer RPC filtering confined to the local proxy rather than gateway-level or node-level filtering.",
+    "Cooperative process isolation relying on registered tokens rather than kernel-enforced sandboxing.",
+    "Localhost-only network containment (127.0.0.1) without public routing or NAT traversal.",
+    "Zero public blockchain validation; results cannot be directly extrapolated to Ethereum Mainnet or public testnets.",
+    "Rule-based detection coverage is limited to the predefined RULE-CHAINC2-001 specification."
+  ],
+  "security_implications": [
+    "Blockchain RPC endpoints and local node interactions constitute an observable security telemetry surface for endpoint detection.",
+    "Defenders must not classify Web3 activity as inherently malicious, as legitimate enterprise dApp usage shares underlying RPC primitives.",
+    "Cross-layer correlation effectively bridges the semantic gap between decentralized ledger queries and traditional network activity.",
+    "Defensive containment should operate under strict safety boundaries to prevent denial of service against benign decentralized applications.",
+    "Active verification probes are essential for validating containment states before declaring incidents resolved.",
+    "Forensic evidence must be snapshot and cryptographically hashed prior to applying state-altering mitigations."
+  ],
+  "reproducibility": {
+    "detection_data_path": "data/evaluation/evaluation_results.json",
+    "detection_results_dir": "results/detection/",
+    "protection_data_path": "data/evaluation/protection_evaluation.json",
+    "protection_results_dir": "results/protection/",
+    "evidence_vault_dir": "data/evidence/",
+    "test_suite_command": "python -m pytest tests/ -v --strict-markers -m unit",
+    "contract_test_command": "npx hardhat test"
+  },
+  "conclusion": {
+    "rq1_verdict": "Demonstrated that cross-layer behavioral correlation reliably detects synthetic blockchain-mediated C2 sequences under laboratory conditions with zero false alarms against legitimate Web3 baseline activity.",
+    "rq2_verdict": "Demonstrated that layered application-layer defensive controls (RPC filtering, network containment, cooperative isolation, and evidence snapshotting) contain synthetic C2 activity with sub-4ms latency while preserving legitimate activity.",
+    "boundary_statement": "The project demonstrates a validated, controlled defensive workflow for detecting and containing blockchain-mediated C2-like behavior. These findings establish proof-of-concept feasibility in a laboratory setting and do not claim universal detection or mitigation of real-world malware on public blockchains."
+  }
+}
