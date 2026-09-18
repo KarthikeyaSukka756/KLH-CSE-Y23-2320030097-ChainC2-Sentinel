@@ -4,7 +4,11 @@
 
 This document describes the telemetry foundation for ChainC2 Sentinel — the data collection, normalization, and persistence layer that captures controlled laboratory activity across four telemetry sources.
 
-**Scope:** This document covers the telemetry foundation only. Correlation, detection, scoring, and evaluation are deferred to Phase 2 and Phase 3.
+**Research Phase:** Phase 1 — Detection  
+**Milestone:** Milestone 3 — Telemetry Foundation  
+**Research Question Addressed:** *"Are blockchain-mediated C2 behaviors detectable?"*
+
+Telemetry serves as the foundational, enabling data layer for the Phase 1 detection research question. Rather than acting as a standalone detection system, this foundation collects, normalizes, and stores the multi-source evidence necessary to enable downstream cross-layer correlation (Milestone 5) and detection logic (Milestone 6).
 
 ---
 
@@ -218,16 +222,36 @@ The interface is deliberately simple so it can be replaced with PostgreSQL or an
 ## Relationship to ChainC2 Sentinel Architecture
 
 ```
-Phase 1 (this milestone)          Phase 2 (future)          Phase 3 (future)
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ Telemetry Foundation │──→│ Correlation Engine    │──→│ Evaluation &         │
-│                      │   │                      │   │ Analysis             │
-│ • SentinelEvent      │   │ • Cross-source       │   │ • Metrics            │
-│ • Collectors (4)     │   │   correlation        │   │ • False-positive     │
-│ • RPC Proxy          │   │ • Evidence chains    │   │   analysis           │
-│ • Normalizer         │   │ • Detection rules    │   │ • Visualization      │
-│ • Event Store        │   │ • Scoring            │   │ • Research paper     │
-└──────────────────────┘   └──────────────────────┘   └──────────────────────┘
+Phase 1 — Detection                                                    Phase 2 — Protection
+┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
+│ Milestone 3: Telemetry   │ ──→ │ Milestone 5: Cross-Layer│ ──→ │ Milestone 6 & 7:        │ ──→ │ Milestones 8–11:        │
+│ Foundation (Implemented)│     │ Correlation (Future)    │     │ Detection & Evaluation  │     │ Defensive Response &    │
+│                         │     │                         │     │ (Future)                │     │ Mitigation (Future)     │
+│ • SentinelEvent schema  │     │ • Temporal correlation  │     │ • Detection logic       │     │ • Defensive response    │
+│ • 4 Telemetry collectors│     │ • Multi-source linkage  │     │ • Heuristic rules       │     │ • Controlled mitigation │
+│ • RPC proxy telemetry   │     │ • Evidence-chain        │     │ • Alert generation      │     │ • Protection evaluation │
+│ • Event normalizer      │     │   reconstruction        │     │ • Measured metrics      │     │ • Security analysis     │
+│ • JSONL persistence     │     │                         │     │ • Baseline comparison   │     │                         │
+└─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
+```
+
+The intended detection evidence chain flows as:
+```
+Endpoint Process
+       ↓
+Blockchain/RPC Interaction
+       ↓
+Transaction / Smart Contract
+       ↓
+Retrieved Synthetic C2 Data / Configuration
+       ↓
+Subsequent Network Activity
+       ↓
+Cross-Layer Correlation (Phase 1, Milestone 5)
+       ↓
+Detection Logic (Phase 1, Milestone 6)
+       ↓
+Evidence / Alert (Phase 1, Milestone 6)
 ```
 
 ---
@@ -235,22 +259,20 @@ Phase 1 (this milestone)          Phase 2 (future)          Phase 3 (future)
 ## What Is Implemented
 
 - Pydantic v2 `SentinelEvent` schema with strict validation
-- Four source-specific telemetry collectors
-- aiohttp-based RPC proxy with telemetry capture
+- Four source-specific telemetry collectors (endpoint, RPC, blockchain, network)
+- aiohttp-based RPC proxy with telemetry capture (distinct from upstream Hardhat node)
 - `EventNormalizer` for raw dict → validated event conversion
 - JSONL `EventStore` for persistence
 - Utility modules (UUID generation, structured logging)
-- Comprehensive unit tests
+- Comprehensive unit tests (88 passing)
 
-## What Is NOT Implemented (Deferred)
+## What Is NOT Implemented (Deferred to Future Milestones)
 
-- Cross-source event correlation
-- Detection rules or heuristics
-- Behavioral or suspicion scoring
-- ML-based detection
-- Alert ranking or automated response
-- Dashboard or visualization
-- Evaluation metrics or performance claims
-- OS-wide process enumeration or ETW/eBPF
-- Packet capture or kernel-level instrumentation
-- Public blockchain interaction
+- **Phase 1, Milestone 4:** Controlled detection scenarios (benign Web3 baseline and synthetic C2-like scenarios)
+- **Phase 1, Milestone 5:** Cross-source event correlation and temporal evidence linking
+- **Phase 1, Milestone 6:** Detection rules, heuristics, behavioral suspicion scoring, and alert generation
+- **Phase 1, Milestone 7:** Detection evaluation metrics (accuracy, precision, recall, latency, false-positive analysis)
+- **Phase 2, Milestones 8–11:** Defensive response design, controlled mitigation, protection evaluation, and final analysis
+- OS-wide process enumeration or ETW/eBPF kernel instrumentation
+- Packet capture or promiscuous network monitoring
+- Public blockchain interactions or real-world malware execution

@@ -2,7 +2,7 @@
 
 ### A Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels
 
-**Engineering Capstone Project – I (PRC-1)**  
+**Engineering Capstone Project – I**  
 **B.Tech Computer Science and Engineering – Cybersecurity**  
 **Academic Year: 2026–2027**
 
@@ -38,74 +38,150 @@ The increasing use of decentralized technologies has introduced new cybersecurit
 
 ## Setup & Execution Instructions
 
-The project is currently in the **PRC-1 documentation and planning stage**. The prototype and controlled laboratory environment have not yet been implemented.
+### Prerequisites
 
-Detailed setup and execution instructions will be added as the individual components are developed and tested.
+- Python 3.10+
+- Node.js 18+
+- npm
 
-### Planned Development Environment
+### Installation
 
-- Python
-- Node.js
-- Docker
-- Hardhat / Local EVM
-- Web3.py / ethers.js
+```bash
+# Clone the repository
+git clone https://github.com/KarthikeyaSukka756/KLH-CSE-Y23-2320030097-ChainC2-Sentinel.git
+cd KLH-CSE-Y23-2320030097-ChainC2-Sentinel
 
-### Current Setup Status
+# Install Python dependencies
+pip install -r requirements.txt
 
-The development environment and component-specific configuration will be finalized during the implementation phase.
+# Install Hardhat and blockchain dependencies
+cd src/blockchain
+npm install
+cd ../..
+```
 
-Once development begins, this section will be updated with verified instructions for:
+### Running Tests
 
-- Setting up the development environment
-- Configuring the controlled laboratory
-- Starting the local blockchain environment
-- Deploying the required test contracts
-- Running the monitoring components
-- Executing controlled test scenarios
-- Running the detection and correlation framework
-- Viewing experimental results
+```bash
+# Run Python unit tests (telemetry schema, collectors, normalizer, persistence)
+python -m pytest tests/ -v --strict-markers -m unit
+
+# Run Hardhat contract tests (C2DataStore, BenignDAppContract)
+cd src/blockchain
+npx hardhat test
+```
+
+### Development Environment
+
+- **Python** — telemetry collectors, event schema, normalizer, persistence
+- **Node.js / Hardhat** — local EVM environment, smart contract compilation and testing
+- **Pydantic v2** — event schema validation
+- **aiohttp** — RPC telemetry proxy
+- **Solidity** — synthetic smart contracts (C2DataStore, BenignDAppContract)
+- **ethers.js** — contract deployment and testing
+
+All blockchain activity is local and synthetic. No public blockchains are used.
 
 ---
 
 ## Current Phase Status
 
-**Current Phase:** Engineering Capstone Project – I (PRC-1)
+**Current Phase:** Phase 1 — Detection  
+**Research Question:** *"Are blockchain-mediated C2 behaviors detectable?"*  
+**Status:** 🟢 **Phase 1 Implementation In Progress (Milestones 1–3 Complete)**
 
-**Week:** 2 of 16
+### Completed Phase 1 Milestones
 
-**Status:** 🟢 **PRC-1 Documentation Completed**
+#### Milestone 1 — Project Infrastructure
+- Project repository architecture, environment configuration, and dependency management
+- Testing frameworks configured (`pytest`, `pytest-asyncio`, Hardhat/Mocha)
 
-### Completed
+#### Milestone 2 — Synthetic Blockchain Environment
+- Local Hardhat EVM environment (chain ID 31337)
+- `C2DataStore` Solidity contract — synthetic research data store for safe C2 simulation
+- `BenignDAppContract` Solidity contract — counter/message DApp for legitimate Web3 baseline activity
+- Automated contract deployment script
+- Hardhat contract test suite (26 passing)
 
-- Project problem statement and objectives
-- Literature survey
-- Research-gap identification
-- Innovation, creativity, and novelty analysis
-- Threat-model development
-- Preliminary system architecture
-- Feasibility analysis
-- Technology-stack definition
-- Evaluation methodology and metrics
-- Project implementation plan
-- PRC-1 project documentation and presentation
+#### Milestone 3 — Telemetry Foundation
+- `SentinelEvent` normalized telemetry schema (Pydantic v2, strict validation)
+- Four source-specific telemetry collectors:
+  - **Endpoint** — safe local process metadata (current process only; no OS-wide enumeration)
+  - **RPC** — JSON-RPC request/response metadata with client-facing proxy and upstream Hardhat node distinction
+  - **Blockchain** — synthetic smart-contract interaction metadata (C2DataStore and BenignDAppContract)
+  - **Network** — controlled local HTTP/network activity metadata (no packet capture)
+- RPC telemetry proxy (aiohttp) — forwards requests between Web3 client and local Hardhat node while capturing telemetry; this is monitoring infrastructure, not attacker C2
+- Event normalizer — validates and converts raw collector output into the common SentinelEvent schema
+- JSONL event store — append-only file-based persistence (`data/telemetry/events.jsonl`) with replaceable interface
+- Utility modules — UUID generation, structured JSON logging
+- Telemetry architecture documentation
+- Python unit test suite (88 passing)
 
-### Next Stage
+### Current Implementation Summary
 
-**Prototype Development and Controlled Laboratory Setup**
+The repository currently implements the foundational layers of Phase 1:
+- Local Hardhat EVM testbed
+- Synthetic smart contracts (`C2DataStore`, `BenignDAppContract`)
+- `SentinelEvent` unified schema
+- Modular collectors across endpoint, RPC, blockchain, and network telemetry
+- JSON-RPC telemetry proxy
+- Telemetry event normalizer
+- File-based JSONL persistence
+- Automated test suites (88 Python unit tests, 26 Hardhat contract tests)
 
-The next stage will focus on:
+### Next Milestones (Phase 1)
 
-- Establishing the controlled development environment
-- Configuring the local blockchain/EVM test environment
-- Defining safe and reproducible simulation scenarios
-- Implementing endpoint telemetry
-- Implementing blockchain/RPC telemetry
-- Implementing network activity monitoring
-- Developing the initial correlation and detection framework
+- **Completed:** Telemetry Foundation (Milestone 3)
+- **Next:** Controlled Detection Scenarios (Milestone 4) → Cross-Layer Correlation (Milestone 5) → Detection Logic & Evidence Generation (Milestone 6) → Detection Evaluation (Milestone 7)
+- **Later:** Phase 2 — Protection (Milestones 8–11: Defensive response design, controlled mitigation, and protection evaluation)
+
+---
+
+## Project Structure
+
+```
+src/
+├── blockchain/          # Hardhat environment, Solidity contracts, deployment, tests
+│   ├── contracts/       # C2DataStore.sol, BenignDAppContract.sol
+│   ├── scripts/         # Contract deployment script
+│   └── test/            # Hardhat/Mocha contract tests
+├── collectors/          # Telemetry collectors (endpoint, RPC, blockchain, network)
+├── models/              # SentinelEvent Pydantic v2 schema and sub-models
+├── normalizer/          # Event normalizer and JSONL persistence
+├── rpc_proxy/           # aiohttp JSON-RPC telemetry proxy
+└── utils/               # UUID generation, structured logging
+tests/                   # Python unit tests
+docs/                    # Architecture documentation, development plan
+```
+
+---
+
+## Validation Results
+
+| Test Suite | Tests | Status |
+|------------|-------|--------|
+| Python unit tests (schema, collectors, normalizer, persistence) | 88 | ✅ Passing |
+| Hardhat contract tests (C2DataStore, BenignDAppContract) | 26 | ✅ Passing |
+
+These are actual test results from the current implementation. Detection accuracy, false-positive rate, and detection latency have not yet been experimentally measured and will be evaluated in future phases.
 
 ---
 
 ## Project Status
 
-**PRC-1 Documentation:** Completed  
-**Prototype Development:** Upcoming
+**Current Research Phase:** Phase 1 — Detection (Milestones 1–3 Implemented)  
+**Next Research Target:** Phase 1, Milestone 4 — Controlled Detection Scenarios  
+
+| Research Phase | Milestone | Focus Area | Status |
+|:---|:---|:---|:---|
+| **Phase 1 — Detection** | Milestone 1 | Project Infrastructure | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 2 | Synthetic Blockchain Environment | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 3 | Telemetry Foundation | ✅ Complete |
+| **Phase 1 — Detection** | Milestone 4 | Controlled Detection Scenarios | ⏳ Not Yet Implemented |
+| **Phase 1 — Detection** | Milestone 5 | Cross-Layer Correlation | ⏳ Not Yet Implemented |
+| **Phase 1 — Detection** | Milestone 6 | Detection | ⏳ Not Yet Implemented |
+| **Phase 1 — Detection** | Milestone 7 | Detection Evaluation | ⏳ Not Yet Implemented |
+| **Phase 2 — Protection** | Milestone 8 | Defensive Response Design | 🔮 Future Research Phase |
+| **Phase 2 — Protection** | Milestone 9 | Controlled Protection / Mitigation | 🔮 Future Research Phase |
+| **Phase 2 — Protection** | Milestone 10 | Protection Evaluation | 🔮 Future Research Phase |
+| **Phase 2 — Protection** | Milestone 11 | Final Research Analysis | 🔮 Future Research Phase |

@@ -1,201 +1,234 @@
-# ChainC2 Sentinel — Development Plan
+# ChainC2 Sentinel Development Plan
 
-## Project
+## Project Overview
 
-ChainC2 Sentinel: A Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels.
+**ChainC2 Sentinel: A Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels**
 
-The project is a defensive cybersecurity research framework developed in a controlled laboratory environment. All blockchain activity, endpoint activity, network activity, and simulated scenarios are intended for safe local experimentation.
-
----
-
-# Development Structure
-
-The implementation is divided into three phases.
-
-Each phase spans approximately two weeks.
-
-Each week must contain a minimum of three meaningful Git commits representing genuine implementation, testing, documentation, or integration work.
-
-A phase is considered complete only after its implementation has been tested, integrated, and documented.
+ChainC2 Sentinel is a defensive cybersecurity research framework developed entirely within a controlled laboratory environment. All blockchain activity, endpoint monitoring, network communication, and simulated attack behaviors are synthetic and designed exclusively for safe local experimentation. No public blockchains or real malware/C2 infrastructure are utilized.
 
 ---
 
-# Phase 1 — Controlled Laboratory & Telemetry
+## Research Structure
 
-## Weeks 1–2
+The official ChainC2 Sentinel research roadmap follows a two-phase structure:
 
-### Objective
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        PHASE 1 — DETECTION                             │
+│   Research Question: "Are blockchain-mediated C2 behaviors             │
+│                       detectable?"                                     │
+│                                                                        │
+│   Milestones 1–7: Infrastructure, Synthetic EVM, Telemetry,            │
+│                   Controlled Scenarios, Correlation, Detection,        │
+│                   and Evaluation                                       │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        PHASE 2 — PROTECTION                            │
+│   Research Question: "Once the behavior is detected, what defensive    │
+│                       measures can be applied?"                        │
+│                                                                        │
+│   Milestones 8–11: Defensive Response Design, Controlled Mitigation,   │
+│                    Protection Evaluation, and Final Research Analysis  │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-Establish the controlled laboratory environment and collect telemetry across the endpoint, blockchain/RPC, and network layers.
+---
 
-### Components
+### Phase 1 — Detection
 
-- Local Hardhat EVM environment
-- Synthetic Solidity contracts
-- Deployment and contract tests
-- Common SentinelEvent telemetry schema
-- RPC monitoring
+#### Research Question
+> *"Are blockchain-mediated C2 behaviors detectable?"*
+
+#### Objectives
+Phase 1 investigates whether blockchain-mediated C2-like behavior can be observed, normalized, correlated, and detected within a controlled cybersecurity laboratory. The objective is to reconstruct the multi-layer evidence chain and determine whether cross-layer telemetry can reliably differentiate synthetic C2 activity from legitimate Web3 interactions.
+
+#### Intended Evidence Chain
+```
+Endpoint Process
+       ↓
+Blockchain/RPC Interaction
+       ↓
+Transaction / Smart Contract
+       ↓
+Retrieved Synthetic C2 Data / Configuration
+       ↓
+Subsequent Network Activity
+       ↓
+Cross-Layer Correlation
+       ↓
+Detection
+       ↓
+Evidence / Alert
+```
+
+#### Scope
+Phase 1 includes:
+- Controlled laboratory environment
+- Synthetic blockchain environment
+- Synthetic C2-like scenarios
 - Endpoint telemetry
+- RPC telemetry
+- Blockchain telemetry
 - Network telemetry
-- Controlled HTTP target
-- Synthetic test scenarios
-- Docker-based isolated laboratory
-- Integration tests
-
-### Current Progress
-
-- Milestone 1 — Development environment and project structure: COMPLETED
-- Milestone 2 — Synthetic blockchain contracts and tests: COMPLETED
-- Milestone 3 onward: NOT STARTED
-
-### Current Git Status
-
-Milestone 1 and Milestone 2 changes are currently in the working tree and have not yet been committed.
-
-Do not combine unrelated milestones into a single commit.
-
----
-
-# Phase 2 — Correlation & Detection
-
-## Weeks 3–4
-
-### Objective
-
-Transform the collected telemetry into a defensive correlation and detection framework.
-
-### Components
-
-- Event ingestion
-- Event normalization
-- Temporal correlation
-- Endpoint-to-RPC correlation
-- RPC-to-blockchain correlation
-- Blockchain-to-network correlation
-- Evidence-chain construction
-- Behavioral features
+- Telemetry normalization
+- Cross-source correlation
 - Detection logic
-- Suspicion scoring
-- Explainable detection output
-- Detection validation
+- Evidence generation
+- Detection evaluation
 
-The detection approach must be justified using the characteristics of the collected telemetry rather than assuming a particular algorithm in advance.
+#### Milestones
 
----
+- **Milestone 1 — Project Infrastructure**
+  - Python/Node.js/Hardhat project setup
+  - Directory structure and environment configuration
+  - Testing frameworks (`pytest`, Hardhat/Mocha)
 
-# Phase 3 — Evaluation & Analysis
+- **Milestone 2 — Synthetic Blockchain Environment**
+  - Local Hardhat EVM (chain ID 31337)
+  - `C2DataStore.sol` — synthetic research contract simulating C2 data-store operations
+  - `BenignDAppContract.sol` — synthetic baseline contract simulating legitimate DApp behavior
+  - Deployment scripts and automated contract test suite
 
-## Weeks 5–6
+- **Milestone 3 — Telemetry Foundation**
+  - `SentinelEvent` common telemetry schema (Pydantic v2, strict validation)
+  - Endpoint telemetry collector (safe local process metadata)
+  - RPC telemetry collector and aiohttp RPC proxy (monitoring proxy distinct from upstream Hardhat node)
+  - Blockchain telemetry collector (smart-contract event and transaction metadata)
+  - Network telemetry collector (controlled local HTTP/network activity)
+  - Event normalizer and JSONL file persistence (`data/telemetry/events.jsonl`)
+  - Telemetry architecture documentation and automated unit tests
 
-### Objective
+- **Milestone 4 — Controlled Detection Scenarios**
+  - Legitimate Web3 baseline scenario (counter increment, message posting)
+  - Synthetic blockchain-mediated C2-like scenario (configuration retrieval, subsequent local network activity)
+  - Additional controlled scenarios as experimentally justified
+  - Controlled local network activity targets
 
-Evaluate the framework experimentally and produce reproducible results.
+- **Milestone 5 — Cross-Layer Correlation**
+  - Temporal correlation across event streams
+  - Endpoint-to-RPC-to-blockchain-to-network relationship mapping
+  - Evidence-chain reconstruction via correlation identifiers
 
-### Components
+- **Milestone 6 — Detection**
+  - Detection logic and heuristic/behavioral rules
+  - Suspicious behavior identification
+  - Evidence generation and structured alert generation
 
-- Automated scenario execution
-- Evaluation pipeline
-- Detection metrics
-- False-positive analysis
-- Detection-latency analysis
-- Legitimate Web3 baseline comparison
-- Results visualization
-- Evidence-chain visualization
-- Dashboard/reporting
-- Experimental documentation
-- Limitations and future work
-
-All reported results must come from actual experiments. No fabricated metrics or results.
-
----
-
-# Git Development Rules
-
-## Weekly Development
-
-Maintain a minimum of three meaningful commits per week.
-
-Commits must represent genuine project progress.
-
-Examples:
-
-- `feat:` new functionality
-- `test:` new or improved tests
-- `docs:` meaningful documentation
-- `fix:` correction of an identified problem
-- `chore:` meaningful infrastructure/configuration work
-
-Do not create artificial commits simply to satisfy a commit count.
+- **Milestone 7 — Detection Evaluation**
+  - Controlled experiment execution
+  - Legitimate Web3 baseline comparison
+  - Detection metrics where actually measured (precision, recall, F1, false-positive rate)
+  - False-positive analysis
+  - Detection-latency measurement
 
 ---
 
-# Phase Checkpoints
+### Phase 2 — Protection
 
-At the completion of each two-week phase:
+#### Research Question
+> *"Once the behavior is detected, what defensive measures can be applied?"*
 
-1. Verify the implementation.
-2. Run the relevant tests.
-3. Update documentation.
-4. Review the repository structure.
-5. Confirm no credentials or confidential data are present.
-6. Create the appropriate review tag.
+#### Objectives
+Phase 2 begins after Phase 1 detection is established. It investigates how defensive measures can safely and effectively mitigate detected blockchain-mediated C2 behavior in a controlled environment. 
 
-Tags:
+> [!IMPORTANT]
+> Phase 2 is strictly defensive. All mitigation mechanisms remain controlled, defensive, and reversible within the laboratory. Phase 2 contains no offensive activity.
 
-- `review-1` — Phase 1 completion
-- `review-2` — Phase 2 completion
-- `final` — Phase 3 completion
+#### Scope
+Phase 2 includes:
+- Analysis of detected behavior
+- Defensive response design
+- Controlled mitigation mechanisms
+- Protection and response implementation
+- Evaluation of defensive effectiveness
+- Final research analysis and documentation
 
-A phase checkpoint represents the verified state of the repository at that point in development.
+#### Milestones
+
+- **Milestone 8 — Defensive Response Design**
+  - Identify appropriate defensive actions based on detected evidence
+  - Define safe response boundaries within the controlled environment
+
+- **Milestone 9 — Controlled Protection / Mitigation**
+  - Implement defensive response mechanisms (e.g., process isolation, RPC throttling/blocking, network rule application)
+  - Ensure all actions remain safe, controlled, and reversible in the laboratory
+
+- **Milestone 10 — Protection Evaluation**
+  - Evaluate the implemented defensive mechanisms
+  - Compare system and communication behavior before and after mitigation under controlled experimental conditions
+
+- **Milestone 11 — Final Research Analysis**
+  - Final results aggregation and synthesis
+  - Research limitations and future work discussion
+  - Research conclusions and paper/deliverable documentation
 
 ---
 
-# Git Safety Rules
+## Current Implementation Status
 
-- Do not use `git add .` blindly when separating milestones.
-- Do not combine unrelated milestone work into one commit.
-- Do not create artificial or empty commits.
-- Do not commit credentials, API keys, `.env` files, licensed datasets, or confidential institutional data.
-- Do not push unless the repository state has been reviewed.
-- Do not create or modify Git history without an explicit development decision.
-- Preserve the ability to identify the exact state of the project at each phase checkpoint.
+| Phase | Milestone | Focus Area | Status |
+|-------|-----------|------------|--------|
+| **Phase 1** | **Milestone 1** | Project Infrastructure | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 2** | Synthetic Blockchain Environment | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 3** | Telemetry Foundation | ✅ **COMPLETE** |
+| **Phase 1** | **Milestone 4** | Controlled Detection Scenarios | ⏳ **NOT YET IMPLEMENTED** |
+| **Phase 1** | **Milestone 5** | Cross-Layer Correlation | ⏳ **NOT YET IMPLEMENTED** |
+| **Phase 1** | **Milestone 6** | Detection | ⏳ **NOT YET IMPLEMENTED** |
+| **Phase 1** | **Milestone 7** | Detection Evaluation | ⏳ **NOT YET IMPLEMENTED** |
+| **Phase 2** | **Milestone 8** | Defensive Response Design | 🔮 **FUTURE** |
+| **Phase 2** | **Milestone 9** | Controlled Protection / Mitigation | 🔮 **FUTURE** |
+| **Phase 2** | **Milestone 10** | Protection Evaluation | 🔮 **FUTURE** |
+| **Phase 2** | **Milestone 11** | Final Research Analysis | 🔮 **FUTURE** |
+
+### Verified Current Repository Assets
+
+- **Local Hardhat EVM:** Chain ID 31337, configured under `src/blockchain/`
+- **Smart Contracts:** `C2DataStore.sol` and `BenignDAppContract.sol` compiled and tested
+- **Telemetry Schema:** `SentinelEvent` Pydantic v2 model with strict schema validation
+- **Collectors:** 4 modular collectors (`endpoint`, `rpc`, `blockchain`, `network`)
+- **RPC Telemetry Proxy:** aiohttp proxy capturing JSON-RPC telemetry between client and Hardhat node
+- **Normalization & Persistence:** `EventNormalizer` and JSONL `EventStore`
+- **Test Suites:**
+  - Python unit tests: **88 passing**
+  - Hardhat contract tests: **26 passing**
+
+### Next Implementation Target
+
+**Phase 1, Milestone 4 — Controlled Detection Scenarios:**
+- Implement controlled test scenarios simulating legitimate Web3 baseline interactions.
+- Implement controlled synthetic scenarios simulating blockchain-mediated C2-like data retrieval and subsequent local network connections.
+- Ensure all activity is confined to the local laboratory environment without connecting to public networks.
 
 ---
 
-# Current Project Position
+## Git Development & Engineering Rules
 
-**Phase:** Phase 1 — Controlled Laboratory & Telemetry
+### Progressive Development
+- Development proceeds incrementally through the defined milestones.
+- Do not mark future milestones as complete until their implementation is fully integrated and tested.
+- Do not combine unrelated milestones into a single commit.
 
-**Week:** Week 1
+### Meaningful Commits
+- Maintain regular, meaningful Git commits representing genuine development progress.
+- Use standard conventional commit prefixes:
+  - `feat:` new functional capability
+  - `test:` new or enhanced test suites
+  - `docs:` substantive documentation updates
+  - `fix:` bug fixes or error corrections
+  - `chore:` maintenance, dependencies, or configuration
+- **No artificial commits:** Do not create dummy or padded commits simply to inflate commit counts.
 
-**Completed Milestones:**
+### Checkpoint and Milestone Tags
+- Use Git tags to mark significant research milestones and phase completions (e.g., `phase-1-telemetry`, `phase-1-detection`, `phase-2-protection`).
+- Ensure the repository is in a clean, tested, and verifiable state before applying a tag.
 
-- Milestone 1 — Project configuration and development infrastructure
-- Milestone 2 — Synthetic blockchain contracts and contract tests
+### Security and Data Safety
+- Never commit private keys, mnemonic phrases, API secrets, `.env` files, or institutional credentials.
+- No live malware or unconstrained exploit code; all scenarios are strictly synthetic and harmless.
+- No public blockchain interaction; only local Hardhat EVM instances.
 
-**Current State:**
-
-The Milestone 1 and Milestone 2 implementation exists locally but has not yet been committed.
-
-### Next Development Target
-
-Continue Phase 1 implementation with the telemetry foundation.
-
-Milestone 1 and Milestone 2 have been completed locally and will be
-incorporated into the planned progressive Git history at the appropriate
-development checkpoint.
-
-The next implementation target is the telemetry foundation, including:
-
-- Common `SentinelEvent` telemetry schema
-- RPC monitoring
-- Endpoint telemetry
-- Network telemetry
-- Controlled HTTP target
-- Synthetic test scenarios
-- Docker-based isolated laboratory
-- Integration tests
-
-**Git checkpoint:** Not created yet.
-
-**Do not create a Git commit or push to GitHub unless explicitly instructed.**
+### Scientific and Research Integrity
+- No fabricated results, mock test metrics, or invented benchmark numbers.
+- Differentiate clearly between implemented capabilities and planned future work.
