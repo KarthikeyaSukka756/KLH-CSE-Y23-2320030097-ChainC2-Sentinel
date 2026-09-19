@@ -71,6 +71,18 @@ cd src/blockchain
 npx hardhat test
 ```
 
+### Starting the Local Hardhat EVM (for live scenario execution)
+
+The project's scenarios run against a local Hardhat EVM. To start the local node before executing live scenarios:
+
+```bash
+# Start the local Ethereum node (localhost:8545, Chain ID 31337)
+cd src/blockchain
+npx hardhat node
+```
+
+This is a fully local, synthetic environment. No public blockchain infrastructure is required or used.
+
 ### Development Environment
 
 - **Python** — telemetry collectors, event schema, normalizer, correlation, scoring, detection, protection
@@ -268,7 +280,7 @@ results/
 ## Project Status
 
 **Current Research Phase:** Phase 1 & Phase 2 Complete (Milestones 1–11 Fully Implemented, Architecture Locked)<br>
-**Next Core Target:** Master Dashboard (Final Core Deliverable)
+**Master Dashboard:** Complete (All Milestones and Deliverables Finished)
 
 | Research Phase | Milestone | Focus Area | Status |
 |:---|:---|:---|:---|
