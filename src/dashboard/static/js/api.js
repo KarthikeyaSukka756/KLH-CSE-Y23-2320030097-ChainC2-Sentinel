@@ -30,15 +30,31 @@ const API = {
     return this._fetchJson(url);
   },
 
+  // Alias called by main.js
+  async getExperimentHistory(params = {}) {
+    return this.getHistory(params);
+  },
+
   async getRunDetails(runId) {
     return this._fetchJson(`/api/experiments/run/${encodeURIComponent(runId)}`);
   },
 
-  async executeExperiment(scenario, repetitions = 1) {
+  // Alias called by main.js
+  async getExperimentRun(runId) {
+    return this.getRunDetails(runId);
+  },
+
+  async executeExperiment(scenarioOrPayload, repetitions = 1) {
+    let body;
+    if (typeof scenarioOrPayload === 'object' && scenarioOrPayload !== null) {
+      body = scenarioOrPayload;
+    } else {
+      body = { scenario: scenarioOrPayload, repetitions };
+    }
     return this._fetchJson('/api/experiments/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario, repetitions })
+      body: JSON.stringify(body)
     });
   },
 
@@ -65,6 +81,11 @@ const API = {
     });
   },
 
+  // Alias called by main.js
+  async verifyEvidence(bundleId) {
+    return this.verifyEvidenceChecksum(bundleId);
+  },
+
   async getResearchSummary() {
     return this._fetchJson('/api/research/summary');
   },
@@ -73,8 +94,22 @@ const API = {
     return this._fetchJson(`/api/research/report/${encodeURIComponent(reportName)}`);
   },
 
+  // Alias called by main.js
+  async getReport(reportName) {
+    return this.getResearchReport(reportName);
+  },
+
   async getDownloadList() {
     return this._fetchJson('/api/downloads');
+  },
+
+  // Alias called by main.js
+  async getDownloadsList() {
+    return this.getDownloadList();
+  },
+
+  getDownloadUrl(fileType) {
+    return `/api/download/${encodeURIComponent(fileType)}`;
   },
 
   async _fetchJson(url, options = {}) {
@@ -91,3 +126,5 @@ const API = {
     }
   }
 };
+
+window.API = API;

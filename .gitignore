@@ -242,6 +242,10 @@ docker-compose.override.yml
 data/telemetry/*
 !data/telemetry/.gitkeep
 
+# Evidence runtime output (generated at runtime; authoritative evidence is tracked)
+data/evidence/evidence_*.json
+
 # Contract deployment artifacts (shared volume output)
 contract-artifacts/
 deployed-addresses.json
+.vercel

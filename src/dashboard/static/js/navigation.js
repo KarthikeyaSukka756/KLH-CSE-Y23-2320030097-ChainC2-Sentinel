@@ -7,19 +7,28 @@ class NavigationManager {
   constructor() {
     this.currentSection = 'overview';
     this.subscribers = [];
+    this._initialized = false;
     this.init();
   }
 
   init() {
+    if (this._initialized) {
+      this.handleHashChange();
+      return;
+    }
+    this._initialized = true;
+
     // Listen for hash change in URL
     window.addEventListener('hashchange', () => this.handleHashChange());
 
-    // Attach click events to nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
+    // Attach click events to nav links/items
+    document.querySelectorAll('.nav-link, .nav-item').forEach(link => {
       link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const target = link.getAttribute('data-target');
+        const target = link.getAttribute('data-section') ||
+                       link.getAttribute('data-target') ||
+                       link.getAttribute('href')?.replace('#', '');
         if (target) {
+          e.preventDefault();
           window.location.hash = target;
         }
       });
@@ -36,7 +45,11 @@ class NavigationManager {
   }
 
   navigateTo(sectionId) {
-    const targetElement = document.getElementById(`section-${sectionId}`);
+    // Resolve section element matching sec-${id} or section-${id} or ${id}
+    const targetElement = document.getElementById(`sec-${sectionId}`) ||
+                          document.getElementById(`section-${sectionId}`) ||
+                          document.getElementById(sectionId);
+
     if (!targetElement) {
       console.warn(`Section '${sectionId}' not found. Defaulting to overview.`);
       sectionId = 'overview';
@@ -45,24 +58,29 @@ class NavigationManager {
     this.currentSection = sectionId;
 
     // Update active class on sections
-    document.querySelectorAll('.dashboard-section').forEach(sec => {
+    document.querySelectorAll('.dashboard-section, .spa-section').forEach(sec => {
       sec.classList.remove('active');
     });
-    const activeSection = document.getElementById(`section-${sectionId}`);
+    const activeSection = document.getElementById(`sec-${sectionId}`) ||
+                          document.getElementById(`section-${sectionId}`) ||
+                          document.getElementById(sectionId);
     if (activeSection) {
       activeSection.classList.add('active');
     }
 
-    // Update active class on nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
-      if (link.getAttribute('data-target') === sectionId) {
+    // Update active class on nav links/items
+    document.querySelectorAll('.nav-link, .nav-item').forEach(link => {
+      const linkTarget = link.getAttribute('data-section') ||
+                         link.getAttribute('data-target') ||
+                         link.getAttribute('href')?.replace('#', '');
+      if (linkTarget === sectionId) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
       }
     });
 
-    // Update page header title
+    // Update page header title if element is present
     const pageTitleEl = document.getElementById('current-page-title');
     if (pageTitleEl) {
       const titles = {
@@ -73,6 +91,7 @@ class NavigationManager {
         'detection': 'Explainable Rule-Based Detection & Scoring',
         'protection': 'Phase 2 Defensive Response & Containment',
         'evaluation': 'Empirical Evaluation & Performance Analytics',
+        'experiment-history': 'Experiment Run History & Forensic Chain',
         'history': 'Experiment Run History & Forensic Chain',
         'evidence': 'Forensic Evidence Explorer & SHA-256 Audit',
         'research': 'Research Synthesis, Observations & Reports',
@@ -89,4 +108,8 @@ class NavigationManager {
   }
 }
 
-window.navManager = new NavigationManager();
+const navManagerInstance = new NavigationManager();
+window.navManager = navManagerInstance;
+window.Navigation = navManagerInstance;
+var Navigation = navManagerInstance;
+var navManager = navManagerInstance;

@@ -6,6 +6,7 @@ evidence exploration, and evaluation analytics for the ChainC2 Sentinel framewor
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -39,7 +40,7 @@ def create_app(
     )
 
     app.config.from_mapping(
-        SECRET_KEY="chainc2-sentinel-local-research-secret-key",
+        SECRET_KEY=os.environ.get("SECRET_KEY", "chainc2-sentinel-local-research-secret-key"),
         REPO_ROOT=root,
     )
     if test_config:
@@ -203,6 +204,14 @@ def create_app(
     @app.route("/api/experiments/execute", methods=["POST"])
     def execute_experiment():
         """Execute a controlled scenario or Run All 3 on-demand."""
+        # Vercel / Production deployment guard: live laboratory scenarios remain local-only
+        if os.environ.get("VERCEL") or os.environ.get("CHAINC2_PRODUCTION") == "1" or app.config.get("PRODUCTION_MODE"):
+            return jsonify({
+                "status": "DISABLED",
+                "error": "Live experiment execution is disabled in production deployment. Use the local research environment to run laboratory scenarios.",
+                "is_running": False,
+            }), 403
+
         if not request.is_json:
             return jsonify({"error": "Request body must be valid JSON"}), 400
 
