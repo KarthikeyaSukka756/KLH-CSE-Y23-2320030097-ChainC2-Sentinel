@@ -10,7 +10,7 @@
     "rq1": {
       "question": "Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?",
       "target_phase": "Phase 1 — Detection",
-      "conclusion": "Yes, within the controlled laboratory environment, blockchain-mediated C2-like sequences are detectable with 100.0% recall and 0.0% false-positive rate across the evaluated synthetic testbed when endpoint, RPC/blockchain, and network telemetry are temporally and contextually correlated."
+      "conclusion": "Yes, within the controlled laboratory environment, blockchain-mediated C2-like sequences are detectable with 100.0% recall and 0.0% false-positive rate across the evaluated synthetic test cases when endpoint, RPC/blockchain, and network telemetry are temporally and contextually correlated."
     },
     "rq2": {
       "question": "Once the behavior is detected, what defensive measures can be applied?",

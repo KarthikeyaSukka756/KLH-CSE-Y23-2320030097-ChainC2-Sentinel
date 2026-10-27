@@ -25,66 +25,92 @@ class ReportService:
 
     DOWNLOAD_WHITELIST: dict[str, dict[str, str]] = {
         "detection_json": {
+            "name": "Phase 1 Detection Evaluation Results",
+            "description": "Full 30-run JSON benchmark dataset with multi-layer telemetry, correlation sequences, and explainability verdicts.",
             "path": "data/evaluation/evaluation_results.json",
             "filename": "evaluation_results_30_runs.json",
             "mimetype": "application/json",
         },
         "protection_json": {
+            "name": "Phase 2 Protection Evaluation Results",
+            "description": "Full 22-run JSON benchmark dataset with automated response execution, verification checks, and rollback results.",
             "path": "data/evaluation/protection_evaluation.json",
             "filename": "protection_evaluation_22_runs.json",
             "mimetype": "application/json",
         },
         "historical_ab_json": {
+            "name": "Historical Phase 1 A/B Evaluation",
+            "description": "Baseline 20-run A/B benchmark dataset comparing benign Web3 baseline against synthetic C2 sequences.",
             "path": "data/evaluation/historical_ab_20_evaluation_results.json",
             "filename": "historical_ab_20_evaluation_results.json",
             "mimetype": "application/json",
         },
         "detection_summary_json": {
+            "name": "Detection Benchmark Summary",
+            "description": "Consolidated metrics summary JSON for Phase 1 detection (100% precision, 100% recall, 0% FPR).",
             "path": "results/detection/evaluation_summary.json",
             "filename": "detection_evaluation_summary.json",
             "mimetype": "application/json",
         },
         "detection_metrics_csv": {
+            "name": "Detection Metrics Table",
+            "description": "Tabular statistical metrics (Precision, Recall, FPR, Specificity, Accuracy, F1-score) in CSV format.",
             "path": "results/detection/detection_metrics.csv",
             "filename": "detection_metrics.csv",
             "mimetype": "text/csv",
         },
         "experiment_results_csv": {
+            "name": "Detection Experiments CSV",
+            "description": "Per-experiment breakdown across 30 runs including scenario labels, latency, and ground truth.",
             "path": "results/detection/experiment_results.csv",
             "filename": "experiment_results_detection.csv",
             "mimetype": "text/csv",
         },
         "protection_summary_json": {
+            "name": "Protection Benchmark Summary",
+            "description": "Consolidated metrics summary JSON for Phase 2 defensive response and containment.",
             "path": "results/protection/evaluation_summary.json",
             "filename": "protection_evaluation_summary.json",
             "mimetype": "application/json",
         },
         "protection_metrics_csv": {
+            "name": "Protection Metrics Table",
+            "description": "Tabular metrics for Phase 2 defense: mitigation success rate, RPC blocking, beacon blocking, and containment latency.",
             "path": "results/protection/protection_metrics.csv",
             "filename": "protection_metrics.csv",
             "mimetype": "text/csv",
         },
         "protection_results_csv": {
+            "name": "Protection Experiments CSV",
+            "description": "Per-experiment breakdown across 22 runs including action counts, verification probes, and rollback verdicts.",
             "path": "results/protection/experiment_results.csv",
             "filename": "experiment_results_protection.csv",
             "mimetype": "text/csv",
         },
         "research_summary_json": {
+            "name": "Consolidated Research Summary",
+            "description": "Formal research questions, multi-layer methodology overview, and synthesized empirical findings.",
             "path": "results/final/research_summary.json",
             "filename": "chainc2_sentinel_research_summary.json",
             "mimetype": "application/json",
         },
         "detection_analysis_md": {
+            "name": "Detection Analysis Report",
+            "description": "Full markdown analysis report evaluating Phase 1 cross-layer telemetry correlation and explainable scoring.",
             "path": "reports/final/DETECTION_ANALYSIS.md",
             "filename": "DETECTION_ANALYSIS.md",
             "mimetype": "text/markdown",
         },
         "final_research_analysis_md": {
+            "name": "Final Research Analysis Report",
+            "description": "Milestone 11 capstone synthesis report on blockchain-mediated C2 channel detection and defense.",
             "path": "reports/final/FINAL_RESEARCH_ANALYSIS.md",
             "filename": "FINAL_RESEARCH_ANALYSIS.md",
             "mimetype": "text/markdown",
         },
         "protection_analysis_md": {
+            "name": "Protection Analysis Report",
+            "description": "Full markdown analysis report evaluating Phase 2 automated response, verification, and forensic preservation.",
             "path": "reports/final/PROTECTION_ANALYSIS.md",
             "filename": "PROTECTION_ANALYSIS.md",
             "mimetype": "text/markdown",
@@ -108,13 +134,13 @@ class ReportService:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # Add convenient flat keys if nested
-            if "research_questions" in data and "research_question" not in data:
-                data["research_question"] = data["research_questions"].get("phase_1")
-            if "phase_1" in data and "phase1_detection_summary" not in data:
-                data["phase1_detection_summary"] = data["phase_1"].get("research_question", "Detection Evaluation Complete")
-            if "phase_2" in data and "phase2_protection_summary" not in data:
-                data["phase2_protection_summary"] = data["phase_2"].get("research_question", "Protection Evaluation Complete")
+            # Map authoritative questions and synthesized conclusions
+            rqs = data.get("research_questions", {})
+            if "rq1" in rqs:
+                data.setdefault("research_question", rqs["rq1"].get("question"))
+                data.setdefault("phase1_detection_summary", rqs["rq1"].get("conclusion"))
+            if "rq2" in rqs:
+                data.setdefault("phase2_protection_summary", rqs["rq2"].get("conclusion"))
 
             return data
         except Exception as e:
@@ -145,8 +171,15 @@ class ReportService:
 
         try:
             content = target_path.read_text(encoding="utf-8")
+            title = report_name
+            for line in content.splitlines():
+                s = line.strip()
+                if s.startswith("# "):
+                    title = s[2:].strip()
+                    break
             return {
                 "report_name": report_name,
+                "title": title,
                 "path": rel_path,
                 "content": content,
                 "char_count": len(content),
@@ -197,6 +230,8 @@ class ReportService:
             target_path = self.repo_root / info["path"]
             items.append({
                 "key": key,
+                "name": info.get("name", key),
+                "description": info.get("description", info["filename"]),
                 "filename": info["filename"],
                 "mimetype": info["mimetype"],
                 "exists": target_path.exists(),

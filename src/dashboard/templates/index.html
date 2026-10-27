@@ -151,6 +151,22 @@
                         <div id="stat-f1" class="stat-value font-mono" style="color: var(--color-primary);">1.000</div>
                         <div class="stat-sub">Optimal Detection</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Confusion Counts</div>
+                        <div class="stat-value font-mono" style="font-size: 1.25rem;">
+                            <span style="color: var(--color-success);">TP:<span id="stat-tp">10</span></span>
+                            <span style="color: var(--color-primary); margin-left: 0.5rem;">TN:<span id="stat-tn">20</span></span>
+                        </div>
+                        <div class="stat-sub">
+                            <span>FP: <span id="stat-fp" class="font-mono">0</span></span> |
+                            <span>FN: <span id="stat-fn" class="font-mono">0</span></span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Mean Detection Latency</div>
+                        <div id="stat-avg-latency" class="stat-value font-mono" style="color: var(--text-primary); font-size: 1.25rem;">0.10 ms</div>
+                        <div class="stat-sub">Min: <span id="stat-min-latency" class="font-mono">0.05 ms</span> | Max: <span id="stat-max-latency" class="font-mono">0.69 ms</span></div>
+                    </div>
                 </div>
 
                 <!-- Latest Activity Table -->
@@ -193,6 +209,10 @@
                     <div class="card-header">
                         <span class="card-title">Laboratory Execution Controls</span>
                         <div id="execution-status"><span class="badge badge-success">LABORATORY READY</span></div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--color-primary); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-secondary);">
+                        <strong>Environment Distinction:</strong> Experiment execution operates with live Hardhat EVM smart contracts and local telemetry collectors in the laboratory environment. In public cloud deployments (e.g. Vercel), execution is safely restricted while all authoritative benchmark runs, telemetry traces, correlation graphs, and evidence bundles remain fully inspectable below and across all tabs.
                     </div>
                     <div style="display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 1rem; align-items: flex-end;">
                         <div class="form-group">
@@ -250,19 +270,47 @@
                         <h2 class="section-title">Telemetry & Event Stream</h2>
                         <p class="section-desc">Chronological event stream captured across Endpoint, JSON-RPC, Smart Contract, and Network egress layers.</p>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <span id="telemetry-source-badge" class="badge badge-neutral">HISTORICAL BENCHMARK DATA</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <span id="telemetry-source-badge" class="badge badge-neutral">CURRENT EXECUTION BATCH</span>
                         <span id="telemetry-count-badge" class="badge badge-primary">0 Events</span>
                         <button id="btn-refresh-telemetry" class="btn btn-secondary btn-sm">Refresh</button>
                     </div>
                 </div>
 
+                <!-- Live Telemetry Controls & Dynamic Summary Panel -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <label for="telemetry-batch-indicator" class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Execution Batch:</label>
+                            <div id="telemetry-batch-indicator" class="font-mono" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); background: var(--bg-tertiary); padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                                Current Execution — <span id="telemetry-batch-timestamp">—</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="telemetry-run-scope-select" class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Run Scope:</label>
+                            <select id="telemetry-run-scope-select" class="form-select" style="font-size: 0.85rem; padding: 0.4rem 0.75rem;">
+                                <option value="ALL">All Runs (Current Execution Batch)</option>
+                                <option value="SCENARIO_A">Scenario A — Benign Web3</option>
+                                <option value="SCENARIO_B">Scenario B — Synthetic C2</option>
+                                <option value="SCENARIO_C">Scenario C — Legitimate DApp</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Telemetry Summary Stats -->
+                    <div id="telemetry-summary-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
+                        <!-- Populated dynamically by main.js -->
+                    </div>
+                </div>
+
                 <div class="card">
-                    <div class="table-container">
+                    <div class="table-container" style="max-height: 520px; overflow-y: auto;">
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Timestamp</th>
+                                    <th>Scenario</th>
+                                    <th>Run ID</th>
                                     <th>Event ID</th>
                                     <th>Layer</th>
                                     <th>Event Type</th>
@@ -272,7 +320,7 @@
                                 </tr>
                             </thead>
                             <tbody id="telemetry-table-body">
-                                <tr><td colspan="7" class="text-center text-muted">Loading telemetry events...</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted">Loading telemetry events...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -463,7 +511,7 @@
 
                 <!-- Detection Latency Card -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Detection Latency Analysis</span></div>
+                    <div class="card-header"><span class="card-title">Detection Processing Latency</span></div>
                     <div id="evaluation-latency-chart">
                         <!-- Rendered by Charts.renderLatencyChart -->
                     </div>
@@ -500,7 +548,7 @@
                                 <tr>
                                     <td><strong>Specificity</strong></td>
                                     <td class="font-mono font-bold" id="eval-specificity">100.0%</td>
-                                    <td>Complete discrimination of non-malicious blockchain telemetry.</td>
+                                    <td>No false positives across the 20 evaluated benign/baseline Web3 executions.</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Accuracy</strong></td>
@@ -644,7 +692,7 @@
                                 Standard JSON-RPC eth_blockNumber & balance polling. No suspicious smart contract state, no dead-drop, no network egress.
                             </div>
                             <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-primary">Score: 10 / 80 ➔ No Detection</span>
+                                <span class="badge badge-primary">Score: 35 / 100 (Threshold: 80) ➔ No Detection</span>
                             </div>
                         </div>
 
@@ -654,7 +702,7 @@
                                 Complex multi-contract interactions, Uniswap/ERC-20 transfers. Legitimate contracts, no C2 instructions, no beacon egress.
                             </div>
                             <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-secondary">Score: 35 / 80 ➔ No Detection</span>
+                                <span class="badge badge-secondary">Score: 35 / 100 (Threshold: 80) ➔ No Detection</span>
                             </div>
                         </div>
 
@@ -664,7 +712,7 @@
                                 Complete correlated sequence: Process context → RPC call → Dead-drop retrieval → C2 command parsing → Matched network egress.
                             </div>
                             <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-danger">Score: 100 / 80 ➔ Detection Triggered</span>
+                                <span class="badge badge-danger">Score: 100 / 100 (Threshold: 80) ➔ Detection Triggered</span>
                             </div>
                         </div>
                     </div>

@@ -62,17 +62,24 @@ def create_app(
         return render_template("index.html")
 
     # -------------------------------------------------------------------------
+    def is_production() -> bool:
+        return bool(os.environ.get("VERCEL") or os.environ.get("CHAINC2_PRODUCTION") == "1" or app.config.get("PRODUCTION_MODE"))
+
+    # -------------------------------------------------------------------------
     # API: Health & Status
     # -------------------------------------------------------------------------
 
     @app.route("/api/health", methods=["GET"])
     def health_check():
         """Service health check."""
+        prod = is_production()
         return jsonify({
             "status": "healthy",
             "service": "ChainC2 Sentinel Master Dashboard",
             "version": "2.0.0-frozen",
             "phases": ["Phase 1 — Detection", "Phase 2 — Protection"],
+            "environment": "Vercel Cloud (Presentation)" if prod else "Controlled Laboratory (Localhost)",
+            "execution_enabled": not prod,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "experiment_in_progress": experiment_service.is_executing(),
         })
@@ -86,7 +93,17 @@ def create_app(
         """Retrieve executive overview metrics, system status, and recent activity."""
         try:
             overview = benchmark_service.get_overview()
+            prod = is_production()
             overview["system_status"]["experiment_in_progress"] = experiment_service.is_executing()
+            overview["system_status"]["execution_enabled"] = not prod
+            overview["system_status"]["environment"] = "Vercel Cloud (Presentation)" if prod else "Controlled Laboratory (Localhost)"
+            if prod:
+                overview["system_status"]["dashboard"] = "CLOUD_DASHBOARD"
+                overview["system_status"]["dashboard_status"] = "CLOUD_DASHBOARD"
+                overview["system_status"]["blockchain_status"] = "HISTORICAL_BENCHMARK"
+                overview["system_status"]["local_blockchain"] = "HISTORICAL_BENCHMARK"
+                overview["system_status"]["telemetry"] = "BENCHMARK_TRACES"
+                overview["system_status"]["telemetry_status"] = "BENCHMARK_TRACES"
             return jsonify(overview)
         except Exception as e:
             logger.error("Error generating overview: %s", e)
@@ -103,6 +120,7 @@ def create_app(
             summary = benchmark_service.get_detection_summary()
             metrics_csv = benchmark_service.get_detection_metrics_csv()
             raw_eval = benchmark_service.get_detection_evaluation_raw()
+            hist_eval = benchmark_service.get_historical_ab_evaluation()
 
             return jsonify({
                 "summary": summary,
@@ -126,6 +144,11 @@ def create_app(
                 "latency": summary.get("detection_latency", {}),
                 "scenario_counts": summary.get("scenario_counts", {}),
                 "experiments_sample": raw_eval.get("experiments", [])[:10],
+                "historical_ab": {
+                    "total_experiments": hist_eval.get("metrics", {}).get("total_experiments", 20),
+                    "metrics": hist_eval.get("metrics", {}),
+                    "scenario_counts": hist_eval.get("scenario_counts", {}),
+                },
             })
         except Exception as e:
             logger.error("Error retrieving detection evaluation: %s", e)
@@ -137,12 +160,14 @@ def create_app(
         try:
             summary = benchmark_service.get_protection_summary()
             metrics_csv = benchmark_service.get_protection_metrics_csv()
+            raw_prot = benchmark_service.get_protection_evaluation_raw()
 
             return jsonify({
                 "summary": summary,
                 "summary_metrics": summary,
                 "metrics_table": metrics_csv,
                 "total_experiments": summary.get("total_experiments", 22),
+                "experiments": raw_prot.get("experiments", []),
                 "metrics": {
                     "mitigation_success_rate": summary.get("mitigation_success_rate", 1.0),
                     "rpc_blocking_rate": summary.get("rpc_blocking_rate", 1.0),
@@ -244,20 +269,28 @@ def create_app(
 
     @app.route("/api/telemetry/live", methods=["GET"])
     def get_live_telemetry():
-        """Retrieve recent normalized telemetry records."""
+        """Retrieve recent normalized telemetry records and current execution batch metadata."""
         run_id = request.args.get("run_id")
         source = request.args.get("source")
-        limit = request.args.get("limit", default=50, type=int)
+        limit = request.args.get("limit", default=100, type=int)
 
+        clean_run_id = Path(run_id).name if run_id and run_id != "ALL" else None
+        batch_info = experiment_service.get_current_execution_batch()
         events = experiment_service.get_live_telemetry(
-            run_id=Path(run_id).name if run_id else None,
+            run_id=clean_run_id,
             source=source,
             limit=limit,
         )
+        is_cur = batch_info.get("is_current_execution", False)
         return jsonify({
             "total_returned": len(events),
             "events": events,
-            "is_live": experiment_service.is_executing(),
+            "execution_batch": batch_info.get("execution_batch"),
+            "summary": batch_info.get("summary"),
+            "runs": batch_info.get("runs"),
+            "source": batch_info.get("source", "current_execution" if is_cur else "historical_benchmark"),
+            "is_current_execution": is_cur,
+            "is_live": bool(experiment_service.is_executing() or is_cur),
         })
 
     # -------------------------------------------------------------------------

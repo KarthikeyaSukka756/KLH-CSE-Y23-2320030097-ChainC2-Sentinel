@@ -59,10 +59,12 @@ const API = {
   },
 
   async getLiveTelemetry(params = {}) {
+    const p = typeof params === 'string' ? { runId: params } : (params || {});
     const qs = new URLSearchParams();
-    if (params.runId) qs.append('run_id', params.runId);
-    if (params.source) qs.append('source', params.source);
-    if (params.limit) qs.append('limit', params.limit);
+    const runId = p.runId || p.run_id;
+    if (runId) qs.append('run_id', runId);
+    if (p.source) qs.append('source', p.source);
+    if (p.limit) qs.append('limit', p.limit);
     const url = `/api/telemetry/live${qs.toString() ? '?' + qs.toString() : ''}`;
     return this._fetchJson(url);
   },

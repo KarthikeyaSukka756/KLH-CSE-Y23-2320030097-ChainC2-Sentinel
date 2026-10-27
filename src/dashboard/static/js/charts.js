@@ -44,7 +44,7 @@ const Charts = {
                 <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem; font-family: var(--font-mono);">
                     <span>0 (Benign)</span>
                     <span style="margin-left: ${threshold - 8}%;">▲ Threshold (${threshold})</span>
-                    <span>100 (C2 Confirmed)</span>
+                    <span>100 (Synthetic C2)</span>
                 </div>
             </div>
         `;
@@ -59,44 +59,69 @@ const Charts = {
         const el = typeof container === 'string' ? document.querySelector(container) : container;
         if (!el) return;
 
-        // Standard 6-rule weighting schema in Phase 1
-        const standardRules = [
-            { key: 'endpoint_process_context', name: 'Endpoint / Process Context', max: 10 },
-            { key: 'client_rpc_interaction', name: 'Client JSON-RPC Interaction', max: 10 },
-            { key: 'smart_contract_interaction', name: 'Smart Contract Interaction', max: 15 },
-            { key: 'dead_drop_command_store', name: 'Dead-drop / Command Store', max: 20 },
-            { key: 'c2_command_indicator', name: 'C2 Command / Config Indicator', max: 20 },
-            { key: 'subsequent_network_egress', name: 'Matched Subsequent Network Egress', max: 25 }
+        // Authoritative 6-factor explainable scoring model in canonical order
+        const canonicalRules = [
+            { key: 'endpoint_context', name: 'Endpoint / Process Context', max: 10 },
+            { key: 'rpc_interaction', name: 'RPC Gateway Interaction', max: 10 },
+            { key: 'contract_interaction', name: 'Contract Interaction', max: 15 },
+            { key: 'suspicious_retrieval', name: 'Suspicious Data Retrieval', max: 20 },
+            { key: 'c2_configuration', name: 'C2 / Configuration Indicator', max: 20 },
+            { key: 'network_followup', name: 'Subsequent Network Activity', max: 25 }
         ];
 
-        // Parse contributions: could be array of {rule_name, points, max_points} or dict
+        const unmatchedExplanations = {
+            'suspicious_retrieval': 'No suspicious retrieval detected. Target contract is not a command or dead-drop store.',
+            'c2_configuration': 'No C2 command/configuration indicator detected.',
+            'network_followup': 'No subsequent network activity observed.',
+            'endpoint_context': 'No endpoint process context identified.',
+            'rpc_interaction': 'No client JSON-RPC interaction observed.',
+            'contract_interaction': 'No smart contract interaction observed on blockchain layer.'
+        };
+
         let items = [];
-        if (Array.isArray(contributions)) {
-            items = contributions.map(c => ({
-                name: c.rule_name || c.name || c.rule_id || 'Rule',
-                points: Number(c.points || c.awarded || 0),
-                max: Number(c.max_points || c.max || 20)
-            }));
-        } else if (contributions && typeof contributions === 'object') {
-            items = standardRules.map(sr => {
-                const awarded = contributions[sr.key] !== undefined ? Number(contributions[sr.key]) : 0;
+        if (Array.isArray(contributions) && contributions.length > 0) {
+            items = canonicalRules.map(cr => {
+                const found = contributions.find(c => {
+                    const r = (c.rule || c.rule_id || c.rule_name || c.key || '').toLowerCase();
+                    return r === cr.key || r.includes(cr.key) || cr.key.includes(r);
+                });
+                if (found) {
+                    const max = Number(found.weight || found.max_points || found.max || cr.max);
+                    const isSatisfied = found.satisfied === true || (found.points !== undefined && Number(found.points) > 0);
+                    const points = found.points !== undefined ? Number(found.points) : (isSatisfied ? max : 0);
+                    const detail = isSatisfied ? (found.evidence_detail || '') : (unmatchedExplanations[cr.key] || found.evidence_detail || '');
+                    return { name: cr.name, points, max, detail, satisfied: isSatisfied };
+                }
+                return { name: cr.name, points: 0, max: cr.max, detail: unmatchedExplanations[cr.key] || '', satisfied: false };
+            });
+        } else if (contributions && typeof contributions === 'object' && Object.keys(contributions).length > 0) {
+            items = canonicalRules.map(cr => {
+                let awarded = 0;
+                if (contributions[cr.key] !== undefined) awarded = Number(contributions[cr.key]);
+                const isSatisfied = awarded > 0;
                 return {
-                    name: sr.name,
+                    name: cr.name,
                     points: awarded,
-                    max: sr.max
+                    max: cr.max,
+                    detail: isSatisfied ? '' : (unmatchedExplanations[cr.key] || ''),
+                    satisfied: isSatisfied
                 };
             });
-        }
-
-        if (items.length === 0) {
-            el.innerHTML = '<div class="text-muted" style="font-size: 0.85rem; padding: 1rem 0;">No scoring breakdown available for this run.</div>';
-            return;
+        } else {
+            // Guarantee canonical rules are always displayed even if empty
+            items = canonicalRules.map(cr => ({
+                name: cr.name,
+                points: 0,
+                max: cr.max,
+                detail: unmatchedExplanations[cr.key] || '',
+                satisfied: false
+            }));
         }
 
         let html = '<div class="contribution-list" style="display: flex; flex-direction: column; gap: 0.75rem;">';
         items.forEach(item => {
             const pct = Math.min(100, Math.round((item.points / item.max) * 100));
-            const isAwarded = item.points > 0;
+            const isAwarded = item.satisfied || item.points > 0;
             const barColor = isAwarded ? 'var(--color-primary)' : 'var(--border-color)';
             const textColor = isAwarded ? 'var(--text-primary)' : 'var(--text-muted)';
             const badgeClass = isAwarded ? 'badge-primary' : 'badge-neutral';
@@ -115,6 +140,7 @@ const Charts = {
                     <div style="height: 6px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden;">
                         <div style="height: 100%; width: ${pct}%; background: ${barColor}; border-radius: 999px;"></div>
                     </div>
+                    ${item.detail ? `<div class="font-mono text-muted" style="font-size: 0.7rem;">${item.detail}</div>` : ''}
                 </div>
             `;
         });
@@ -189,9 +215,18 @@ const Charts = {
         const el = typeof container === 'string' ? document.querySelector(container) : container;
         if (!el) return;
 
-        const a = Number(counts.scenario_a || counts.A || 0);
-        const b = Number(counts.scenario_b || counts.B || 0);
-        const c = Number(counts.scenario_c || counts.C || 0);
+        let a = Number(counts.scenario_a_benign || counts.scenario_a || counts.A || 0);
+        let b = Number(counts.scenario_b_synthetic_c2 || counts.scenario_b_c2_like || counts.scenario_b || counts.B || 0);
+        let c = Number(counts.scenario_c_legitimate_dapp || counts.scenario_c || counts.C || 0);
+
+        if (a === 0 && b === 0 && c === 0 && typeof counts === 'object') {
+            for (const [k, v] of Object.entries(counts)) {
+                const kl = k.toLowerCase();
+                if (kl.includes('scenario_a') || kl === 'a') a += Number(v);
+                else if (kl.includes('scenario_b') || kl === 'b') b += Number(v);
+                else if (kl.includes('scenario_c') || kl === 'c') c += Number(v);
+            }
+        }
         const total = a + b + c || 1;
 
         const aPct = ((a / total) * 100).toFixed(1);
@@ -232,9 +267,32 @@ const Charts = {
         const el = typeof container === 'string' ? document.querySelector(container) : container;
         if (!el) return;
 
-        const avg = Number(latencyData.avg_latency_ms || latencyData.average_latency_ms || 0).toFixed(2);
-        const min = Number(latencyData.min_latency_ms || 0).toFixed(2);
-        const max = Number(latencyData.max_latency_ms || 0).toFixed(2);
+        const formatLat = (val) => {
+            const n = Number(val);
+            if (isNaN(n) || n === 0) return '0.000000';
+            return n.toFixed(6);
+        };
+
+        const avg = formatLat(
+            latencyData.average_ms ??
+            latencyData.avg_ms ??
+            latencyData.avg_latency_ms ??
+            latencyData.average_latency_ms ??
+            latencyData.containment_latency_avg_ms ??
+            0
+        );
+        const min = formatLat(
+            latencyData.min_ms ??
+            latencyData.min_latency_ms ??
+            latencyData.containment_latency_min_ms ??
+            0
+        );
+        const max = formatLat(
+            latencyData.max_ms ??
+            latencyData.max_latency_ms ??
+            latencyData.containment_latency_max_ms ??
+            0
+        );
 
         el.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
@@ -263,9 +321,12 @@ const Charts = {
         const el = typeof container === 'string' ? document.querySelector(container) : container;
         if (!el) return;
 
-        const stages = correlation.stages || ['ENDPOINT', 'RPC', 'BLOCKCHAIN', 'NETWORK'];
-        const transitions = correlation.transitions || [];
-        const isComplete = correlation.chain_complete ?? (stages.length >= 4);
+        const stages = Array.isArray(correlation.stages) ? correlation.stages : [];
+        const transitions = Array.isArray(correlation.transitions) ? correlation.transitions : [];
+        const stagesUpper = stages.map(s => String(s).toUpperCase());
+        const isComplete = correlation.chain_complete === true ||
+                           correlation.is_complete_chain === true ||
+                           (stagesUpper.length >= 4 && stagesUpper.includes('NETWORK'));
 
         let html = `
             <div class="correlation-graph" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
@@ -275,7 +336,7 @@ const Charts = {
                     </div>
                     <div>
                         <span class="badge ${isComplete ? 'badge-danger' : 'badge-neutral'}">
-                            ${isComplete ? 'COMPLETE CHAIN (4/4 LAYERS)' : `INCOMPLETE CHAIN (${stages.length}/4 LAYERS)`}
+                            ${isComplete ? '4/4 STAGES OBSERVED' : `${stages.length} OBSERVED STAGES`}
                         </span>
                     </div>
                 </div>
@@ -290,7 +351,7 @@ const Charts = {
         ];
 
         layerMeta.forEach((layer, idx) => {
-            const observed = stages.includes(layer.id) || stages.includes(layer.id.toLowerCase());
+            const observed = stagesUpper.includes(layer.id);
             const borderColor = observed ? 'var(--color-primary)' : 'var(--border-color)';
             const bgColor = observed ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-tertiary)';
             const opacity = observed ? '1' : '0.5';

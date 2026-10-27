@@ -203,6 +203,7 @@ class BenchmarkService:
 
         return {
             "system_status": {
+                "dashboard": "READY",
                 "dashboard_status": "operational",
                 "framework_version": "2.0.0-frozen",
                 "environment": "Controlled Laboratory (Localhost)",
@@ -214,8 +215,13 @@ class BenchmarkService:
                     "upstream_node": "http://127.0.0.1:8545",
                     "status": "connected_or_ready",
                 },
+                "blockchain_status": "HARDHAT_EVM",
+                "telemetry": "NORMALIZED",
+                "telemetry_status": "NORMALIZED",
                 "detection_engine": "operational (explainable weighted rule-based)",
+                "detection_status": "ENGINE_ACTIVE",
                 "protection_engine": "operational (application-layer containment)",
+                "protection_status": "DEFENSE_READY",
             },
             "research_pipeline": [
                 {"step": 1, "name": "Controlled Scenarios", "desc": "Scenario A, B, C synthetic workloads"},
