@@ -59,6 +59,8 @@ class BaseScenario(abc.ABC):
         host: str = "127.0.0.1",
         rpc_proxy_url: str = "http://127.0.0.1:8546",
         upstream_url: str = "http://127.0.0.1:8545",
+        rpc_client: Optional[Any] = None,
+        network: str = "localhost",
     ) -> None:
         """Initialize scenario context.
 
@@ -68,12 +70,49 @@ class BaseScenario(abc.ABC):
             host: Host identifier for telemetry.
             rpc_proxy_url: Client-facing RPC proxy URL.
             upstream_url: Upstream Hardhat node URL.
+            rpc_client: Optional LocalRpcClient or mock for JSON-RPC interaction.
+            network: Intended network ('localhost', 'hardhat', 'hardhat_docker', 'sepolia').
         """
         self.run_id = run_id or generate_run_id()
         self.event_store = event_store
         self.host = host
         self.rpc_proxy_url = rpc_proxy_url
         self.upstream_url = upstream_url
+
+        self.network = (network or "localhost").strip().lower()
+        if self.network in ("sepolia",):
+            self.network_name = "sepolia"
+            self.chain_id = "11155111"
+        elif self.network in ("hardhat_docker",):
+            self.network_name = "hardhat_docker"
+            self.chain_id = "31337"
+        else:
+            self.network_name = "hardhat"
+            self.chain_id = "31337"
+
+        if rpc_client is not None:
+            client_net = getattr(rpc_client, "network", None)
+            if client_net:
+                self.network = client_net.strip().lower()
+                if self.network in ("sepolia",):
+                    self.network_name = "sepolia"
+                    self.chain_id = "11155111"
+                elif self.network in ("hardhat_docker",):
+                    self.network_name = "hardhat_docker"
+                    self.chain_id = "31337"
+                else:
+                    self.network_name = "hardhat"
+                    self.chain_id = "31337"
+            client_cid = getattr(rpc_client, "expected_chain_id", None)
+            if client_cid:
+                self.chain_id = str(client_cid)
+
+        from src.blockchain.rpc_client import LocalRpcClient
+        self.rpc_client = rpc_client or LocalRpcClient(
+            rpc_url=self.rpc_proxy_url,
+            network=self.network,
+            expected_chain_id=self.chain_id,
+        )
 
         self.normalizer = EventNormalizer()
 
@@ -90,8 +129,8 @@ class BaseScenario(abc.ABC):
             host=self.host,
         )
         self.blockchain_collector = BlockchainTelemetryCollector(
-            chain_id="31337",
-            network_name="hardhat",
+            chain_id=self.chain_id,
+            network_name=self.network_name,
             host=self.host,
         )
         self.network_collector = NetworkTelemetryCollector(

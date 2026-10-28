@@ -118,7 +118,12 @@ class MatrixV2ExecutionRecord(BaseModel):
     score_threshold_met: bool = Field(default=False, description="Whether detector_score >= detector_threshold")
     triggered: bool = Field(default=False, description="Authoritative detection outcome (from rule conjunction)")
     classification: Classification = Field(default=Classification.EXCLUDED, description="Performance classification")
-    detection_latency_ms: float = Field(default=0.0, description="Detection evaluation latency in milliseconds")
+    detection_latency_ms: Optional[float] = Field(
+        default=None, description="Detection evaluation latency in milliseconds (None if unmeasured)"
+    )
+    execution_duration_ms: Optional[float] = Field(
+        default=None, description="Total scenario execution duration in milliseconds"
+    )
 
     # Optional Mitigation & Error Context
     mitigation_result: Optional[str] = Field(default=None, description="Mitigation status if applicable")
@@ -355,3 +360,46 @@ VARIANT_REGISTRY: dict[str, dict[str, Any]] = {
         "provenance": Provenance.GENUINE_EXECUTION,
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Aggregate Latency Calculation (Unbiased / Non-Zero Filtering)
+# ---------------------------------------------------------------------------
+
+def compute_aggregate_latency(
+    records: list[MatrixV2ExecutionRecord] | list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Calculate aggregate detection latency statistics excluding unmeasured observations.
+
+    Guarantees:
+    - Missing/unmeasured latency (None) is excluded from mathematical aggregation.
+    - Prevents artificial downward bias from zero-event or validation-rejected runs.
+    - Explicitly reports total_records, measured_records, and unmeasured_records.
+
+    Returns:
+        dict containing:
+            - total_records: int
+            - measured_records: int
+            - unmeasured_records: int
+            - mean_latency_ms: Optional[float] (None if no valid measurements)
+            - min_latency_ms: Optional[float] (None if no valid measurements)
+            - max_latency_ms: Optional[float] (None if no valid measurements)
+    """
+    latencies: list[float] = []
+    for r in records:
+        val = r.detection_latency_ms if isinstance(r, MatrixV2ExecutionRecord) else r.get("detection_latency_ms")
+        if val is not None:
+            latencies.append(float(val))
+
+    total = len(records)
+    measured = len(latencies)
+    unmeasured = total - measured
+
+    return {
+        "total_records": total,
+        "measured_records": measured,
+        "unmeasured_records": unmeasured,
+        "mean_latency_ms": round(sum(latencies) / measured, 4) if measured > 0 else None,
+        "min_latency_ms": round(min(latencies), 4) if measured > 0 else None,
+        "max_latency_ms": round(max(latencies), 4) if measured > 0 else None,
+    }

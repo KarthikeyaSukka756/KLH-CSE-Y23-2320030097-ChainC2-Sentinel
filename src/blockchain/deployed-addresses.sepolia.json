@@ -1,0 +1,10 @@
+{
+  "network": "sepolia",
+  "chainId": "11155111",
+  "chainIdHex": "0xaa36a7",
+  "status": "UNCONFIGURED",
+  "deployedAt": null,
+  "deployer": null,
+  "contracts": {},
+  "notice": "Sepolia contract addresses are unconfigured. Stage C authorization and live contract deployment are required before addresses can be populated."
+}

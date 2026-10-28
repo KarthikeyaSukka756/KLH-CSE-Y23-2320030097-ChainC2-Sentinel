@@ -77,6 +77,18 @@ MINIMAL_CAMPAIGN_116: dict[str, int] = {
     "C01": 4, "C02": 4, "C03": 4, "C04": 4, "C05": 4, "C06": 4, "C07": 4, "C08": 4,
 }
 
+# Balanced Matrix v2 Evaluation Allocation: 81 Runs (27 variants x 3 replicates)
+# Tier 1 (48 runs): A01-A06 (18), B01-B05 (15), C01-C05 (15)
+# Tier 2 (33 runs): A07-A08b (9), B06-B09 (15), C06-C08 (9)
+BALANCED_CAMPAIGN_81: dict[str, int] = {
+    # Scenario A: 9 variants x 3 = 27
+    "A01": 3, "A02": 3, "A03": 3, "A04": 3, "A05": 3, "A06": 3, "A07": 3, "A08a": 3, "A08b": 3,
+    # Scenario B: 10 variants x 3 = 30
+    "B01": 3, "B02": 3, "B03": 3, "B04": 3, "B05": 3, "B06": 3, "B07a": 3, "B07b": 3, "B08": 3, "B09": 3,
+    # Scenario C: 8 variants x 3 = 24
+    "C01": 3, "C02": 3, "C03": 3, "C04": 3, "C05": 3, "C06": 3, "C07": 3, "C08": 3,
+}
+
 
 @dataclass
 class CampaignRunSpec:
@@ -103,9 +115,20 @@ class CampaignRunSpec:
 class CampaignPlanGenerator:
     """Generates deterministic execution plans for Matrix v2 campaigns without live execution."""
 
-    def __init__(self, allocation: Optional[dict[str, int]] = None, campaign_name: str = "matrix_v2_372") -> None:
+    def __init__(
+        self,
+        allocation: Optional[dict[str, int]] = None,
+        campaign_name: Optional[str] = None,
+    ) -> None:
         self.allocation = allocation or RECOMMENDED_CAMPAIGN_372
-        self.campaign_name = campaign_name
+        if campaign_name:
+            self.campaign_name = campaign_name
+        elif self.allocation == BALANCED_CAMPAIGN_81:
+            self.campaign_name = "matrix_v2_81"
+        elif self.allocation == MINIMAL_CAMPAIGN_116:
+            self.campaign_name = "matrix_v2_116"
+        else:
+            self.campaign_name = f"matrix_v2_{sum(self.allocation.values())}"
 
     def generate_plan(self) -> list[CampaignRunSpec]:
         """Generate ordered list of planned execution specs."""

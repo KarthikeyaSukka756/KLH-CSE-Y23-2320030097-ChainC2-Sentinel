@@ -21,9 +21,10 @@ import json
 import logging
 from typing import Any, Optional
 from urllib import request as urllib_request
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
+from src.blockchain.rpc_client import decode_string, decode_uint256, encode_string, encode_uint256
 from src.collectors.endpoint_collector import SyntheticEndpointCollector
 from src.http_target.server import LocalHttpTargetServer
 from src.normalizer.normalizer import EventStore
@@ -31,6 +32,46 @@ from src.scenarios.base import BaseScenario
 from src.scenarios.payload import SyntheticC2Payload
 
 logger = logging.getLogger("chainc2_sentinel.scenarios.c2")
+
+
+class NoRedirectHandler(urllib_request.HTTPRedirectHandler):
+    """Explicitly reject HTTP redirects to enforce strict loopback-only communication."""
+
+    def redirect_request(
+        self,
+        req: urllib_request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        raise HTTPError(
+            req.full_url,
+            code,
+            f"Security policy rejection: HTTP redirect to '{newurl}' is prohibited",
+            headers,
+            fp,
+        )
+
+    def http_error_302(
+        self,
+        req: urllib_request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+    ) -> Any:
+        newurl = headers.get("location") or headers.get("uri") or "unknown"
+        raise HTTPError(
+            req.full_url,
+            code,
+            f"Security policy rejection: HTTP redirect to '{newurl}' is prohibited",
+            headers,
+            fp,
+        )
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
 
 
 class SyntheticC2Scenario(BaseScenario):
@@ -41,7 +82,7 @@ class SyntheticC2Scenario(BaseScenario):
 
     def __init__(
         self,
-        contract_address: str = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        contract_address: str = "0x5FbDB2315678afecb367f032d93F642f64180aa3",
         target_server: Optional[LocalHttpTargetServer] = None,
         target_port: Optional[int] = None,
         run_id: Optional[str] = None,
@@ -55,6 +96,8 @@ class SyntheticC2Scenario(BaseScenario):
         replicate_id: int = 1,
         state_context_id: Optional[str] = None,
         seed: Optional[int] = None,
+        rpc_client: Optional[Any] = None,
+        network: str = "localhost",
     ) -> None:
         super().__init__(
             run_id=run_id,
@@ -62,6 +105,8 @@ class SyntheticC2Scenario(BaseScenario):
             host=host,
             rpc_proxy_url=rpc_proxy_url,
             upstream_url=upstream_url,
+            rpc_client=rpc_client,
+            network=network,
         )
         self.contract_address = contract_address
         self.target_server = target_server
@@ -89,13 +134,37 @@ class SyntheticC2Scenario(BaseScenario):
         )
 
     def setup(self) -> None:
-        """Ensure local HTTP target server is running."""
+        """Ensure local HTTP target server is running and seed initial command if contract is empty."""
         if self.target_server is None:
             # Spin up an internal managed local HTTP target on 127.0.0.1
             self._managed_server = LocalHttpTargetServer(host="127.0.0.1", port=self._target_port or 0)
             self._managed_server.start()
             self.target_server = self._managed_server
         logger.debug("Scenario B setup (%s): target server available at %s", self.variant_id, self.target_server.base_url)
+
+        if self.rpc_client is not None:
+            try:
+                latest_res = self.rpc_client.eth_call(to=self.contract_address, data="0x4f5063c4")
+                latest_raw = decode_string(latest_res.result or "") if (latest_res and latest_res.success) else ""
+                needs_seed = True
+                if latest_raw:
+                    try:
+                        p = SyntheticC2Payload.from_raw(latest_raw)
+                        if p.target == self.target_server.beacon_url:
+                            needs_seed = False
+                    except Exception:
+                        pass
+                if needs_seed:
+                    init_payload = SyntheticC2Payload(
+                        scenario="synthetic_c2",
+                        command="BEACON",
+                        target=self.target_server.beacon_url,
+                        parameters={"client_tag": "lab_client_01", "variant_id": "INIT"},
+                    ).to_blockchain_string()
+                    data = "0x7246c8a5" + encode_string(init_payload)
+                    self.rpc_client.eth_send_transaction(to=self.contract_address, data=data)
+            except Exception as e:
+                logger.warning("Could not pre-seed C2DataStore: %s", e)
 
     def execute(self) -> dict[str, Any]:
         """Execute the synthetic C2-like multi-source event sequence for the configured variant.
@@ -149,15 +218,6 @@ class SyntheticC2Scenario(BaseScenario):
         assert self.target_server is not None, "Target server must be running"
         target_url = self.target_server.beacon_url
 
-        # Construct inert synthetic payload
-        payload = SyntheticC2Payload(
-            scenario="synthetic_c2",
-            command="BEACON",
-            target=target_url,
-            parameters={"client_tag": "lab_client_01", "variant_id": self.variant_id},
-        )
-        raw_blockchain_command = payload.to_blockchain_string()
-
         # Step 1: Endpoint telemetry
         endpoint_event = self.endpoint_collector.collect()
         endpoint_prov = "SIMULATED_FIXTURE" if vid in ("B06", "B_ANOMALY") else "GENUINE_EXECUTION"
@@ -172,14 +232,30 @@ class SyntheticC2Scenario(BaseScenario):
         self.record_event(endpoint_event, step_name="endpoint_init")
 
         # Step 2: Blockchain / RPC interaction based on variant
+        # Note: All variants strictly require a successful RPC call and valid on-chain payload.
+        # Silent fallback to preconstructed in-memory payload is explicitly prohibited.
+        parsed_payload: SyntheticC2Payload
+        raw_blockchain_command: str
+
         if vid == "B05":
-            # Real storeCommand() transaction preceding retrieval
+            # Genuine storeCommand() transaction preceding retrieval
+            seed_payload = SyntheticC2Payload(
+                scenario="synthetic_c2",
+                command="BEACON",
+                target=target_url,
+                parameters={"client_tag": "lab_client_01", "variant_id": "B05"},
+            )
+            raw_to_store = seed_payload.to_blockchain_string()
+            calldata = "0x7246c8a5" + encode_string(raw_to_store)
+            tx_res = self.rpc_client.eth_send_transaction(to=self.contract_address, data=calldata)
+
             rpc_store = self.rpc_collector.collect(
                 rpc_method="eth_sendTransaction",
-                status="success",
-                duration_ms=21.4,
-                request_params={"to": self.contract_address, "data": "0x19bb8d45", "cmd": "BEACON"},
-                response_result={"tx_hash": "0x7b8e9b3c2d1f0e8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f7d"},
+                status=tx_res.status,
+                duration_ms=tx_res.duration_ms,
+                request_params=tx_res.request_params,
+                response_result=tx_res.response_result,
+                error_message=tx_res.error_message,
             )
             rpc_store.metadata.update({"contract_target": "C2DataStore", "action": "store_command", "variant_id": "B05"})
             self.record_event(rpc_store, step_name="rpc_store_command")
@@ -188,70 +264,170 @@ class SyntheticC2Scenario(BaseScenario):
                 contract_name="C2DataStore",
                 contract_address=self.contract_address,
                 function_name="storeCommand",
-                tx_hash="0x7b8e9b3c2d1f0e8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f7d",
-                block_number=104,
-                sender="0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-                event_name="CommandStored",
-                event_args={"sender": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "command": "BEACON", "index": 0},
+                tx_hash=tx_res.tx_hash or "",
+                block_number=tx_res.block_number,
+                sender=tx_res.sender,
+                event_name="CommandStored" if tx_res.success else None,
+                event_args={"sender": tx_res.sender, "command": seed_payload.command, "index": 0} if tx_res.success else {},
                 event_type="contract_interaction",
             )
-            bc_store.metadata.update({"variant_id": "B05"})
+            bc_store.metadata.update({"variant_id": "B05", "gas_used": tx_res.gas_used, "provenance": "GENUINE_EXECUTION"})
             self.record_event(bc_store, step_name="blockchain_command_stored")
 
-        if vid == "B04":
-            # getCommandCount() followed by getCommandAtIndex(i)
-            rpc_count = self.rpc_collector.collect(
-                rpc_method="eth_call",
-                status="success",
-                duration_ms=4.1,
-                request_params={"to": self.contract_address, "data": "0x4b7e9b3c"},
-                response_result={"result": "0x0000000000000000000000000000000000000000000000000000000000000001"},
-            )
-            self.record_event(rpc_count, step_name="rpc_get_command_count")
+            if not tx_res.success:
+                raise RuntimeError(f"Scenario B05 storeCommand transaction failed: {tx_res.error_message}")
 
-            cmd_idx = int(self.parameters.get("command_index", 0))
+            # Followed by reading getLatestCommand()
+            call_res = self.rpc_client.eth_call(to=self.contract_address, data="0x4f5063c4")
             rpc_event = self.rpc_collector.collect(
                 rpc_method="eth_call",
-                status="success",
-                duration_ms=11.8,
-                request_params={"to": self.contract_address, "data": "0x98765432", "index": cmd_idx},
-                response_result={"command_length": len(raw_blockchain_command), "status": "0x1"},
+                status=call_res.status,
+                duration_ms=call_res.duration_ms,
+                request_params=call_res.request_params,
+                response_result=call_res.response_result,
+                error_message=call_res.error_message,
             )
-            rpc_event.metadata.update({"contract_target": "C2DataStore", "variant_id": "B04"})
-            self.record_event(rpc_event, step_name="rpc_get_command_at_index")
-
-            blockchain_event = self.blockchain_collector.collect(
-                contract_name="C2DataStore",
-                contract_address=self.contract_address,
-                function_name="getCommandAtIndex",
-                block_number=102,
-                sender="0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-                event_type="contract_read",
-            )
-            blockchain_event.metadata.update({"retrieved_command": payload.command, "target_host": "127.0.0.1", "variant_id": "B04"})
-            self.record_event(blockchain_event, step_name="blockchain_command_retrieval")
-
-        else:
-            # Default getLatestCommand()
-            rpc_event = self.rpc_collector.collect(
-                rpc_method="eth_call",
-                status="success",
-                duration_ms=12.1,
-                request_params={"to": self.contract_address, "data": "0x5c880fcb"},
-                response_result={"command_length": len(raw_blockchain_command), "status": "0x1"},
-            )
-            rpc_event.metadata.update({"contract_target": "C2DataStore", "variant_id": self.variant_id})
+            rpc_event.metadata.update({"contract_target": "C2DataStore", "variant_id": "B05"})
             self.record_event(rpc_event, step_name="rpc_query")
+
+            if not call_res.success:
+                raise RuntimeError(f"Scenario B05 getLatestCommand eth_call failed: {call_res.error_message}")
+
+            retrieved_raw = decode_string(call_res.result or "")
+            if not retrieved_raw or not retrieved_raw.strip():
+                raise RuntimeError("Scenario B05 contract read returned empty command payload from C2DataStore")
+
+            try:
+                parsed_payload = SyntheticC2Payload.from_raw(retrieved_raw)
+            except Exception as e:
+                raise RuntimeError(f"Scenario B05 contract read returned malformed payload from C2DataStore: {e}") from e
+
+            raw_blockchain_command = retrieved_raw
 
             blockchain_event = self.blockchain_collector.collect(
                 contract_name="C2DataStore",
                 contract_address=self.contract_address,
                 function_name="getLatestCommand",
-                block_number=102,
-                sender="0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                sender=self.rpc_client.default_sender,
                 event_type="contract_read",
             )
-            blockchain_event.metadata.update({"retrieved_command": payload.command, "target_host": "127.0.0.1", "variant_id": self.variant_id})
+            blockchain_event.metadata.update({
+                "retrieved_command": parsed_payload.command,
+                "target_host": "127.0.0.1",
+                "variant_id": "B05",
+                "provenance": "GENUINE_EXECUTION",
+                "call_success": call_res.success,
+            })
+            self.record_event(blockchain_event, step_name="blockchain_command_retrieval")
+
+        elif vid == "B04":
+            # Genuine getCommandCount() followed by getCommandAtIndex(i)
+            count_res = self.rpc_client.eth_call(to=self.contract_address, data="0x9a2d834f")
+            rpc_count = self.rpc_collector.collect(
+                rpc_method="eth_call",
+                status=count_res.status,
+                duration_ms=count_res.duration_ms,
+                request_params=count_res.request_params,
+                response_result=count_res.response_result,
+                error_message=count_res.error_message,
+            )
+            self.record_event(rpc_count, step_name="rpc_get_command_count")
+
+            if not count_res.success:
+                raise RuntimeError(f"Scenario B04 getCommandCount eth_call failed: {count_res.error_message}")
+
+            cmd_count = decode_uint256(count_res.result or "")
+            if cmd_count == 0:
+                raise RuntimeError("Scenario B04 contract has no stored commands (count is 0)")
+
+            cmd_idx = int(self.parameters.get("command_index", 0))
+            if cmd_idx >= cmd_count:
+                cmd_idx = cmd_count - 1
+            idx_calldata = "0xc450f1fa" + encode_uint256(cmd_idx)
+            call_res = self.rpc_client.eth_call(to=self.contract_address, data=idx_calldata)
+            rpc_event = self.rpc_collector.collect(
+                rpc_method="eth_call",
+                status=call_res.status,
+                duration_ms=call_res.duration_ms,
+                request_params=call_res.request_params,
+                response_result=call_res.response_result,
+                error_message=call_res.error_message,
+            )
+            rpc_event.metadata.update({"contract_target": "C2DataStore", "variant_id": "B04"})
+            self.record_event(rpc_event, step_name="rpc_get_command_at_index")
+
+            if not call_res.success:
+                raise RuntimeError(f"Scenario B04 getCommandAtIndex eth_call failed: {call_res.error_message}")
+
+            retrieved_raw = decode_string(call_res.result or "")
+            if not retrieved_raw or not retrieved_raw.strip():
+                raise RuntimeError(f"Scenario B04 contract read returned empty payload at index {cmd_idx}")
+
+            try:
+                parsed_payload = SyntheticC2Payload.from_raw(retrieved_raw)
+            except Exception as e:
+                raise RuntimeError(f"Scenario B04 contract read returned malformed payload at index {cmd_idx}: {e}") from e
+
+            raw_blockchain_command = retrieved_raw
+
+            blockchain_event = self.blockchain_collector.collect(
+                contract_name="C2DataStore",
+                contract_address=self.contract_address,
+                function_name="getCommandAtIndex",
+                sender=self.rpc_client.default_sender,
+                event_type="contract_read",
+            )
+            blockchain_event.metadata.update({
+                "retrieved_command": parsed_payload.command,
+                "target_host": "127.0.0.1",
+                "variant_id": "B04",
+                "provenance": "GENUINE_EXECUTION",
+                "call_success": call_res.success,
+            })
+            self.record_event(blockchain_event, step_name="blockchain_command_retrieval")
+
+        else:
+            # Default genuine getLatestCommand()
+            call_res = self.rpc_client.eth_call(to=self.contract_address, data="0x4f5063c4")
+            rpc_event = self.rpc_collector.collect(
+                rpc_method="eth_call",
+                status=call_res.status,
+                duration_ms=call_res.duration_ms,
+                request_params=call_res.request_params,
+                response_result=call_res.response_result,
+                error_message=call_res.error_message,
+            )
+            rpc_event.metadata.update({"contract_target": "C2DataStore", "variant_id": self.variant_id})
+            self.record_event(rpc_event, step_name="rpc_query")
+
+            if not call_res.success:
+                raise RuntimeError(f"Scenario B ({vid}) getLatestCommand eth_call failed: {call_res.error_message}")
+
+            retrieved_raw = decode_string(call_res.result or "")
+            if not retrieved_raw or not retrieved_raw.strip():
+                raise RuntimeError(f"Scenario B ({vid}) contract read returned empty command payload from C2DataStore")
+
+            try:
+                parsed_payload = SyntheticC2Payload.from_raw(retrieved_raw)
+            except Exception as e:
+                raise RuntimeError(f"Scenario B ({vid}) contract read returned malformed payload from C2DataStore: {e}") from e
+
+            raw_blockchain_command = retrieved_raw
+
+            blockchain_event = self.blockchain_collector.collect(
+                contract_name="C2DataStore",
+                contract_address=self.contract_address,
+                function_name="getLatestCommand",
+                sender=self.rpc_client.default_sender,
+                event_type="contract_read",
+            )
+            blockchain_event.metadata.update({
+                "retrieved_command": parsed_payload.command,
+                "target_host": "127.0.0.1",
+                "variant_id": self.variant_id,
+                "provenance": "GENUINE_EXECUTION",
+                "call_success": call_res.success,
+            })
             self.record_event(blockchain_event, step_name="blockchain_command_retrieval")
 
         # Step 3: Timing Perturbations (B02 / B03)
@@ -263,7 +439,6 @@ class SyntheticC2Scenario(BaseScenario):
             time.sleep(min(0.2, cadence_ms / 1000.0))  # Controlled local pause
 
         # Step 4: Strict Loopback Network Beacon Execution
-        parsed_payload = SyntheticC2Payload.from_raw(raw_blockchain_command)
         assert parsed_payload.command == "BEACON", "Only BEACON command allowed"
 
         parsed_target = urlparse(parsed_payload.target)
@@ -305,10 +480,29 @@ class SyntheticC2Scenario(BaseScenario):
             response_size = 78
         else:
             try:
-                with urllib_request.urlopen(req, timeout=timeout_val) as resp:
+                opener = urllib_request.build_opener(NoRedirectHandler())
+                with opener.open(req, timeout=timeout_val) as resp:
                     status_code = resp.status
                     resp_data = resp.read()
                     response_size = len(resp_data)
+            except HTTPError as err:
+                status_code = err.code
+                if 300 <= err.code < 400:
+                    error_type = "HTTP_REDIRECT_REJECTED"
+                    logger.warning(
+                        "Synthetic beacon rejected HTTP redirect (status %s) for %s: %s",
+                        err.code,
+                        self.variant_id,
+                        err,
+                    )
+                else:
+                    error_type = "HTTP_ERROR"
+                    logger.warning(
+                        "Synthetic beacon HTTP error (status %s) for %s: %s",
+                        err.code,
+                        self.variant_id,
+                        err,
+                    )
             except URLError as err:
                 error_type = "ECONNREFUSED" if vid == "B07A" else ("TIMEOUT" if vid == "B07B" else "NETWORK_ERROR")
                 logger.warning("Local loopback beacon handled error for %s: %s", self.variant_id, err)
@@ -333,6 +527,8 @@ class SyntheticC2Scenario(BaseScenario):
         })
         if error_type:
             network_event.metadata["error_type"] = error_type
+        if status_code in (301, 302, 303, 307, 308):
+            network_event.metadata["redirect_rejected"] = True
         self.record_event(network_event, step_name="network_beacon")
 
         return {
@@ -344,6 +540,7 @@ class SyntheticC2Scenario(BaseScenario):
             "network_calls_made": 1,
             "variant_id": self.variant_id,
             "error_type": error_type,
+            "beacon_success": (status_code == 200),
         }
 
     def teardown(self) -> None:

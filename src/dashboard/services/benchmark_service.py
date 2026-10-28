@@ -280,7 +280,7 @@ class BenchmarkService:
                     "protection_status": (
                         "mitigated" if e.get("scenario_id") == "scenario_b_synthetic_c2" else "skipped"
                     ),
-                    "latency_ms": round(e.get("detection_latency_ms", 0.0), 4),
+                    "latency_ms": round(e["detection_latency_ms"], 4) if e.get("detection_latency_ms") is not None else None,
                 }
                 for e in experiments[-8:]
             ],
