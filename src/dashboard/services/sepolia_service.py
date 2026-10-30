@@ -22,9 +22,9 @@ class SepoliaService:
         self.repo_root = repo_root or get_repo_root()
         self.monitor = SepoliaMonitor.get_instance(repo_root=self.repo_root)
 
-    def get_status(self) -> dict[str, Any]:
+    def get_status(self, force: bool = False) -> dict[str, Any]:
         """Return connectivity and monitor status."""
-        return self.monitor.check_connection()
+        return self.monitor.check_connection(force=force)
 
     def get_transactions(
         self,

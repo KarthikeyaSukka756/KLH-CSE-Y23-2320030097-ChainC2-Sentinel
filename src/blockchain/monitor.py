@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timezone
@@ -199,7 +200,7 @@ class SepoliaMonitor:
             except Exception as e:
                 logger.debug("Could not load cached Sepolia investigations: %s", e)
 
-        # 6. Monitoring Cursor
+        # 6. Monitoring Cursor (synced across AppSail and Catalyst cron function)
         cursor_file = cache_dir / "sepolia_cursor.json"
         if cursor_file.exists():
             try:
@@ -207,6 +208,17 @@ class SepoliaMonitor:
                 self.last_ingested_block = data.get("last_ingested_block", self.last_ingested_block)
             except Exception as e:
                 logger.debug("Could not load cached Sepolia cursor: %s", e)
+
+        cron_cursor_file = cache_dir / "monitoring_cursor.json"
+        if cron_cursor_file.exists():
+            try:
+                cdata = json.loads(cron_cursor_file.read_text(encoding="utf-8"))
+                c_block = cdata.get("last_block_number")
+                if c_block is not None:
+                    if self.last_ingested_block is None or c_block > self.last_ingested_block:
+                        self.last_ingested_block = c_block
+            except Exception as e:
+                logger.debug("Could not load cached cron cursor: %s", e)
 
     def _persist_cached_state(self) -> None:
         cache_dir = self._get_cache_dir()
@@ -273,19 +285,28 @@ class SepoliaMonitor:
         except Exception as e:
             logger.debug("Failed to persist Sepolia investigations: %s", e)
 
-        # 6. Monitoring Cursor
+        # 6. Monitoring Cursor (persisted for both AppSail and Catalyst storage adapter)
         try:
             lag = (self.latest_block - self.last_ingested_block) if (self.latest_block and self.last_ingested_block) else 0
-            with open(cache_dir / "sepolia_cursor.json", "w", encoding="utf-8") as f:
-                json.dump({
-                    "network": "sepolia",
-                    "chainId": self.chain_id,
-                    "last_ingested_block": self.last_ingested_block,
-                    "latest_block": self.latest_block,
-                    "monitoring_lag_blocks": max(0, lag),
-                    "total_observed_transactions": len(self.observed_transactions),
-                    "updated_at": now_iso,
-                }, f, indent=2)
+            cursor_payload = {
+                "network": "sepolia",
+                "chainId": self.chain_id,
+                "chain_id": self.chain_id,
+                "last_ingested_block": self.last_ingested_block,
+                "last_block_number": self.last_ingested_block,
+                "latest_block": self.latest_block,
+                "monitoring_lag_blocks": max(0, lag),
+                "total_observed_transactions": len(self.observed_transactions),
+                "last_poll_time": now_iso,
+                "updated_at": now_iso,
+            }
+            # Atomic file replacement prevents corrupted JSON on interruption
+            for filename in ("sepolia_cursor.json", "monitoring_cursor.json"):
+                target_file = cache_dir / filename
+                tmp_file = cache_dir / f"{filename}.tmp"
+                with open(tmp_file, "w", encoding="utf-8") as f:
+                    json.dump(cursor_payload, f, indent=2)
+                os.replace(tmp_file, target_file)
         except Exception as e:
             logger.debug("Failed to persist Sepolia cursor: %s", e)
 
@@ -293,37 +314,57 @@ class SepoliaMonitor:
     # Network Connectivity & Status
     # -------------------------------------------------------------------------
 
-    def check_connection(self) -> dict[str, Any]:
-        """Perform verified health and chain ID check against Sepolia RPC."""
+    def check_connection(self, force: bool = False, max_age_seconds: float = 6.0) -> dict[str, Any]:
+        """Perform verified health and chain ID check against Sepolia RPC.
+
+        Supports debounce caching and concurrency protection to prevent older out-of-order
+        responses from overwriting newer health state.
+        """
         with self._lock:
-            try:
-                rpc_cid = self.rpc_client.get_chain_id()
-                if rpc_cid != SEPOLIA_CHAIN_ID:
+            if not force and self.last_poll_time is not None and self.latest_block is not None:
+                age = (datetime.now(timezone.utc) - self.last_poll_time).total_seconds()
+                if age < max_age_seconds:
+                    return self.get_status_summary()
+
+        call_start_time = datetime.now(timezone.utc)
+        try:
+            rpc_cid = self.rpc_client.get_chain_id()
+            if rpc_cid != SEPOLIA_CHAIN_ID:
+                with self._lock:
                     self.is_connected = False
                     self.connection_status = "Incorrect chain"
                     self.last_poll_error = f"Expected chain ID {SEPOLIA_CHAIN_ID}, got {rpc_cid}"
-                    return self.get_status_summary()
+                return self.get_status_summary()
 
-                latest_bn = self.rpc_client.eth_block_number()
-                self.latest_block = latest_bn
+            latest_bn = self.rpc_client.eth_block_number()
+            with self._lock:
+                # Concurrent race guard: older overlapping calls cannot overwrite newer block heights
+                is_newer_call = (self.last_poll_time is None or call_start_time >= self.last_poll_time)
+                if is_newer_call or (self.latest_block is None or latest_bn >= self.latest_block):
+                    self.latest_block = latest_bn
                 if self.last_ingested_block is None:
-                    self.last_ingested_block = latest_bn
+                    self.last_ingested_block = self.latest_block
                 self.is_connected = True
                 self.connection_status = "Connected"
-                self.last_poll_time = datetime.now(timezone.utc)
+                # Only update poll timestamp if this check started at or after existing poll time
+                if is_newer_call:
+                    self.last_poll_time = call_start_time
                 self.last_poll_error = None
-            except Exception as e:
-                self.is_connected = False
-                err_str = str(e)
-                if "rate limit" in err_str.lower() or "429" in err_str:
-                    self.connection_status = "Rate limited"
-                    self.rate_limit_count += 1
-                else:
-                    self.connection_status = "Temporarily unavailable"
-                self.polling_errors_count += 1
-                self.last_poll_error = err_str
+        except Exception as e:
+            with self._lock:
+                # Only update error state if this call is newer than existing poll time
+                if self.last_poll_time is None or call_start_time >= self.last_poll_time:
+                    self.is_connected = False
+                    err_str = str(e)
+                    if "rate limit" in err_str.lower() or "429" in err_str:
+                        self.connection_status = "Rate limited"
+                        self.rate_limit_count += 1
+                    else:
+                        self.connection_status = "Temporarily unavailable"
+                    self.polling_errors_count += 1
+                    self.last_poll_error = err_str
 
-            return self.get_status_summary()
+        return self.get_status_summary()
 
     def get_status_summary(self) -> dict[str, Any]:
         """Return structured network connection and health summary."""
@@ -339,6 +380,12 @@ class SepoliaMonitor:
             except Exception:
                 contract_status = "ERROR"
 
+        # Check background daemon health truthfully
+        is_thread_alive = bool(self._monitor_thread and self._monitor_thread.is_alive())
+        if self.monitoring_active and not is_thread_alive:
+            self.monitoring_active = False
+        is_active = bool(self.monitoring_active and is_thread_alive)
+
         lag = max(0, (self.latest_block - self.last_ingested_block)) if (self.latest_block and self.last_ingested_block) else 0
         sync_status = "SYNCED" if lag <= 1 else ("CATCHING_UP" if lag <= 25 else "BEHIND")
 
@@ -353,7 +400,9 @@ class SepoliaMonitor:
             "last_ingested_block": self.last_ingested_block,
             "monitoring_lag_blocks": lag,
             "sync_status": sync_status,
-            "monitoring_active": self.monitoring_active,
+            "monitoring_active": is_active,
+            "continuous_monitoring_active": is_active,
+            "daemon_status": "RUNNING" if is_active else "IDLE",
             "last_poll_time": self.last_poll_time.isoformat() if self.last_poll_time else None,
             "last_poll_error": self.last_poll_error,
             "polling_errors_count": self.polling_errors_count,
@@ -407,15 +456,21 @@ class SepoliaMonitor:
     # -------------------------------------------------------------------------
 
     def _ingest_blocks(self, target_blocks: list[int], sample_limit_per_block: int = 25) -> list[dict[str, Any]]:
-        """Ingest transactions from a specific sequence of block numbers."""
+        """Ingest transactions from a specific sequence of block numbers sequentially without skipping."""
         newly_observed: list[dict[str, Any]] = []
 
         with self._lock:
-            for b_num in target_blocks:
+            # Process strictly in ascending order to prevent skipping blocks
+            sorted_blocks = sorted(set(target_blocks))
+            last_consecutive_success = None
+
+            for b_num in sorted_blocks:
                 try:
                     block_data = self.rpc_client.eth_get_block_by_number(b_num, full_transactions=True)
-                    if not block_data:
-                        continue
+                    if block_data is None:
+                        # Block not available yet; halt sequential advancement
+                        logger.warning("SepoliaMonitor: Block %d returned empty data; halting cursor advance", b_num)
+                        break
 
                     raw_txs = block_data.get("transactions", [])
                     b_timestamp_hex = block_data.get("timestamp", "0x0")
@@ -455,13 +510,18 @@ class SepoliaMonitor:
                         self._tx_hashes_seen.add(tx_hash)
                         newly_observed.append(record)
 
+                    # Only record success after all transactions for this block are recorded
+                    last_consecutive_success = b_num
+
                 except Exception as e:
                     self.polling_errors_count += 1
                     self.last_poll_error = f"Error querying block {b_num}: {e}"
                     logger.debug("Failed polling block %d: %s", b_num, e)
+                    # Halt cursor advancement so unprocessed blocks are not skipped
+                    break
 
-            if target_blocks:
-                self.last_ingested_block = max(target_blocks)
+            if last_consecutive_success is not None:
+                self.last_ingested_block = max(self.last_ingested_block or 0, last_consecutive_success)
 
             # Cap in-memory buffer
             if len(self.observed_transactions) > self.max_buffer_size:
@@ -473,7 +533,7 @@ class SepoliaMonitor:
 
     def poll_latest_blocks(self, block_count: int = 1, sample_limit_per_block: int = 25) -> list[dict[str, Any]]:
         """Poll latest mined blocks and extract verified Sepolia transactions."""
-        conn_status = self.check_connection()
+        conn_status = self.check_connection(force=True)
         if not self.is_connected or self.latest_block is None:
             return []
 
@@ -1337,19 +1397,26 @@ class SepoliaMonitor:
     def start_continuous_monitoring(self, poll_interval_seconds: float = 15.0) -> bool:
         """Start unattended continuous Sepolia monitoring loop in a background thread."""
         with self._lock:
-            if self.monitoring_active:
+            if self.monitoring_active and self._monitor_thread and self._monitor_thread.is_alive():
                 return True
             self.monitoring_active = True
             self._stop_event.clear()
 
         def _monitor_loop():
             logger.info("SepoliaMonitor: Continuous monitoring loop started (interval=%.1fs)", poll_interval_seconds)
+            consecutive_errors = 0
             while not self._stop_event.is_set():
                 try:
                     self.poll_latest_blocks(block_count=1, sample_limit_per_block=10)
+                    consecutive_errors = 0
                 except Exception as exc:
-                    logger.debug("SepoliaMonitor: Error in continuous poll cycle: %s", exc)
-                self._stop_event.wait(timeout=poll_interval_seconds)
+                    consecutive_errors += 1
+                    logger.warning("SepoliaMonitor: Error in continuous poll cycle: %s", exc)
+                # Resilient backoff on repeated RPC network errors (capped at 60s)
+                current_interval = min(60.0, poll_interval_seconds * (1.5 ** min(consecutive_errors, 3)))
+                self._stop_event.wait(timeout=current_interval)
+            with self._lock:
+                self.monitoring_active = False
             logger.info("SepoliaMonitor: Continuous monitoring loop stopped")
 
         self._monitor_thread = threading.Thread(target=_monitor_loop, daemon=True, name="SepoliaMonitorDaemon")
@@ -1359,7 +1426,7 @@ class SepoliaMonitor:
     def stop_continuous_monitoring(self) -> bool:
         """Gracefully stop unattended continuous Sepolia monitoring."""
         with self._lock:
-            if not self.monitoring_active:
+            if not self.monitoring_active and not (self._monitor_thread and self._monitor_thread.is_alive()):
                 return False
             self.monitoring_active = False
             self._stop_event.set()

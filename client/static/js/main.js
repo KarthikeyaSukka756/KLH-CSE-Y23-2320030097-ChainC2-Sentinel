@@ -157,9 +157,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // 1. LIVE MONITOR CONTROLLER
     // -------------------------------------------------------------------------
-    async function loadSepoliaStatus() {
+    // Concurrency guards for asynchronous polling
+    let latestStatusReqId = 0;
+    let latestTxReqId = 0;
+
+    async function loadSepoliaStatus(force = false) {
+        const reqId = ++latestStatusReqId;
         try {
-            const data = await API.getSepoliaStatus();
+            const data = await API.getSepoliaStatus(force);
+            // Drop out-of-order response if a newer request already resolved
+            if (reqId < latestStatusReqId) return;
+
             State.sepoliaStatus = data;
 
             // Synchronize Connection Badge across Header & Health Card
@@ -195,8 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Continuous Daemon state
             const daemonStatusEl = document.getElementById('continuous-daemon-status');
             const toggleDaemonBtn = document.getElementById('btn-toggle-continuous');
+            const isDaemonRunning = Boolean(data.continuous_monitoring_active || data.monitoring_active);
+            State.isContinuousMonitoring = isDaemonRunning;
+
             if (daemonStatusEl && toggleDaemonBtn) {
-                if (data.continuous_monitoring_active || State.isContinuousMonitoring) {
+                if (isDaemonRunning) {
                     daemonStatusEl.className = 'badge badge-success';
                     daemonStatusEl.textContent = 'DAEMON: RUNNING';
                     toggleDaemonBtn.textContent = '⏹ Stop Continuous Ingestion';
@@ -212,10 +223,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadSepoliaTransactions() {
+        const reqId = ++latestTxReqId;
         try {
             const filterEl = document.getElementById('sepolia-tx-filter');
             const filterVal = filterEl ? filterEl.value : '';
             const res = await API.getSepoliaTransactions(filterVal, 100);
+            if (reqId < latestTxReqId) return;
+
             State.sepoliaTransactions = res.transactions || [];
             applyTxFilterAndRender();
         } catch (err) {
@@ -1021,45 +1035,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle continuous monitoring
     const btnToggleCont = document.getElementById('btn-toggle-continuous');
     if (btnToggleCont) {
-        btnToggleCont.addEventListener('click', () => {
-            State.isContinuousMonitoring = !State.isContinuousMonitoring;
+        btnToggleCont.addEventListener('click', async () => {
+            const isCurrentlyRunning = State.isContinuousMonitoring;
             const daemonStatusEl = document.getElementById('continuous-daemon-status');
-            if (State.isContinuousMonitoring) {
-                btnToggleCont.textContent = '⏹ Stop Continuous Ingestion';
-                if (daemonStatusEl) {
-                    daemonStatusEl.className = 'badge badge-success';
-                    daemonStatusEl.textContent = 'DAEMON: RUNNING';
+            btnToggleCont.disabled = true;
+            try {
+                if (isCurrentlyRunning) {
+                    await API.stopContinuousMonitoring();
+                    State.isContinuousMonitoring = false;
+                    if (daemonStatusEl) {
+                        daemonStatusEl.className = 'badge badge-neutral';
+                        daemonStatusEl.textContent = 'DAEMON: IDLE';
+                    }
+                    btnToggleCont.textContent = '▶ Start Continuous Ingestion';
+                    showNotification('Continuous block ingestion daemon stopped.', 'info');
+                } else {
+                    await API.startContinuousMonitoring(15.0);
+                    State.isContinuousMonitoring = true;
+                    if (daemonStatusEl) {
+                        daemonStatusEl.className = 'badge badge-success';
+                        daemonStatusEl.textContent = 'DAEMON: RUNNING';
+                    }
+                    btnToggleCont.textContent = '⏹ Stop Continuous Ingestion';
+                    showNotification('Continuous block ingestion daemon started (polling every 15s).', 'success');
                 }
-                showNotification('Continuous block ingestion started (polling every 12s).', 'success');
-                // Poll immediately, then schedule recurring poll
-                API.pollSepoliaBlocks().then(() => {
-                    loadSepoliaStatus();
-                    loadSepoliaTransactions();
-                }).catch(() => {});
-                State.continuousPollTimer = setInterval(async () => {
-                    try {
-                        await API.pollSepoliaBlocks();
-                        await Promise.all([loadSepoliaStatus(), loadSepoliaTransactions()]);
-                    } catch (e) {}
-                }, 12000);
-            } else {
-                btnToggleCont.textContent = '▶ Start Continuous Ingestion';
-                if (daemonStatusEl) {
-                    daemonStatusEl.className = 'badge badge-neutral';
-                    daemonStatusEl.textContent = 'DAEMON: IDLE';
-                }
-                clearInterval(State.continuousPollTimer);
-                showNotification('Continuous block ingestion stopped.', 'info');
+                await loadSepoliaStatus(true);
+            } catch (err) {
+                showNotification(`Failed to toggle continuous daemon: ${err.message}`, 'error');
+            } finally {
+                btnToggleCont.disabled = false;
             }
         });
     }
 
     // Refresh buttons
     const btnRefreshStatus = document.getElementById('btn-sepolia-refresh-status');
-    if (btnRefreshStatus) btnRefreshStatus.addEventListener('click', loadSepoliaStatus);
+    if (btnRefreshStatus) {
+        btnRefreshStatus.addEventListener('click', async () => {
+            btnRefreshStatus.disabled = true;
+            try {
+                await Promise.all([loadSepoliaStatus(true), loadSepoliaTransactions()]);
+                showNotification('Sepolia connection & status refreshed.', 'info');
+            } catch (e) {
+                console.error('Failed refreshing Sepolia status:', e);
+            } finally {
+                btnRefreshStatus.disabled = false;
+            }
+        });
+    }
 
     const btnRefreshTxs = document.getElementById('btn-sepolia-refresh-txs');
-    if (btnRefreshTxs) btnRefreshTxs.addEventListener('click', loadSepoliaTransactions);
+    if (btnRefreshTxs) {
+        btnRefreshTxs.addEventListener('click', async () => {
+            btnRefreshTxs.disabled = true;
+            try {
+                await loadSepoliaTransactions();
+                showNotification('Sepolia transactions refreshed.', 'info');
+            } catch (e) {
+                console.error('Failed refreshing Sepolia transactions:', e);
+            } finally {
+                btnRefreshTxs.disabled = false;
+            }
+        });
+    }
 
     const btnRefreshAlerts = document.getElementById('btn-refresh-alerts');
     if (btnRefreshAlerts) btnRefreshAlerts.addEventListener('click', loadAlerts);
@@ -1264,7 +1302,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Data Fetch
     Promise.all([
-        loadSepoliaStatus(),
+        loadSepoliaStatus(true),
         loadSepoliaTransactions(),
         loadAlerts(),
         loadInvestigations(),
@@ -1273,13 +1311,42 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSystemHealth()
     ]);
 
-    // Autonomous Periodic Monitoring & Alert Notification Loop (every 5s)
+    // Autonomous Periodic Monitoring & Live Dashboard Refresh Loop (every 5s)
+    let refreshCycleCount = 0;
+    let lastObservedTxCount = 0;
     setInterval(async () => {
+        refreshCycleCount++;
+
+        // Live Sepolia status & daemon health
+        try {
+            await loadSepoliaStatus();
+        } catch (e) {
+            console.debug('Periodic status refresh error:', e);
+        }
+
+        // Live threat alerts
         try {
             await loadAlerts();
+        } catch (e) {
+            console.debug('Periodic alerts refresh error:', e);
+        }
+
+        // Comprehensive system health
+        try {
             await loadSystemHealth();
         } catch (e) {
-            console.debug('Autonomous poll cycle error:', e);
+            console.debug('Periodic health check error:', e);
+        }
+
+        // Refresh transaction list every 3 cycles (15s) or immediately when transaction count changes
+        const currentTxCount = State.sepoliaStatus?.total_observed_transactions || 0;
+        if (refreshCycleCount % 3 === 0 || currentTxCount !== lastObservedTxCount) {
+            lastObservedTxCount = currentTxCount;
+            try {
+                await loadSepoliaTransactions();
+            } catch (e) {
+                console.debug('Periodic transactions refresh error:', e);
+            }
         }
     }, 5000);
 });

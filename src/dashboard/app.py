@@ -82,10 +82,14 @@ def create_app(
 
     @app.after_request
     def add_cors_headers(response):
-        """Enable Cross-Origin Resource Sharing for Catalyst Web Client hosting."""
+        """Enable Cross-Origin Resource Sharing for Catalyst Web Client hosting and prevent stale API caching."""
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+        if request.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
     @app.route("/api/<path:dummy>", methods=["OPTIONS"])
@@ -110,9 +114,7 @@ def create_app(
 
     # -------------------------------------------------------------------------
     def is_production() -> bool:
-        if os.environ.get("VERCEL") or app.config.get("PRODUCTION_MODE"):
-            return True
-        if os.environ.get("CHAINC2_PRODUCTION") == "1":
+        if app.config.get("PRODUCTION_MODE") or os.environ.get("CHAINC2_PRODUCTION") == "1":
             return True
         return False
 
@@ -129,7 +131,7 @@ def create_app(
             "service": "ChainC2 Sentinel Master Dashboard",
             "version": "2.0.0-frozen",
             "phases": ["Phase 1 — Detection", "Phase 2 — Protection"],
-            "environment": "Vercel Cloud (Presentation)" if prod else "Controlled Laboratory (Localhost)",
+            "environment": "Zoho Catalyst CloudScale" if prod else "Controlled Laboratory (Localhost)",
             "execution_enabled": not prod,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "experiment_in_progress": experiment_service.is_executing(),
@@ -149,7 +151,7 @@ def create_app(
             prod = is_production()
             overview["system_status"]["experiment_in_progress"] = experiment_service.is_executing()
             overview["system_status"]["execution_enabled"] = not prod
-            overview["system_status"]["environment"] = "Vercel Cloud (Presentation)" if prod else "Controlled Laboratory (Localhost)"
+            overview["system_status"]["environment"] = "Zoho Catalyst CloudScale" if prod else "Controlled Laboratory (Localhost)"
             if prod:
                 overview["system_status"]["dashboard"] = "CLOUD_DASHBOARD"
                 overview["system_status"]["dashboard_status"] = "CLOUD_DASHBOARD"
@@ -284,8 +286,8 @@ def create_app(
     @app.route("/api/experiments/execute", methods=["POST"])
     def execute_experiment():
         """Execute a controlled scenario or Run All 3 on-demand."""
-        # Vercel / Production deployment guard: live laboratory scenarios remain local-only
-        if os.environ.get("VERCEL") or os.environ.get("CHAINC2_PRODUCTION") == "1" or app.config.get("PRODUCTION_MODE"):
+        # Production deployment guard: live laboratory scenarios remain local-only
+        if os.environ.get("CHAINC2_PRODUCTION") == "1" or app.config.get("PRODUCTION_MODE"):
             return jsonify({
                 "status": "DISABLED",
                 "error": "Live experiment execution is disabled in production deployment. Use the local research environment to run laboratory scenarios.",
@@ -546,7 +548,8 @@ def create_app(
     @app.route("/api/sepolia/status", methods=["GET"])
     def get_sepolia_status():
         """Retrieve Sepolia testnet connectivity, RPC health, and contract status."""
-        return jsonify(sepolia_service.get_status())
+        force = request.args.get("force", "").lower() in ("1", "true")
+        return jsonify(sepolia_service.get_status(force=force))
 
     @app.route("/api/sepolia/transactions", methods=["GET"])
     def get_sepolia_transactions():
@@ -637,6 +640,30 @@ def create_app(
         max_blocks = request.args.get("max_blocks", default=10, type=int)
         result = sepolia_service.catch_up(max_blocks=max_blocks)
         return jsonify(result)
+
+    @app.route("/api/sepolia/monitoring/start", methods=["POST"])
+    @app.route("/api/sepolia/start-monitoring", methods=["POST"])
+    def start_sepolia_monitoring():
+        """Start unattended continuous Sepolia monitoring daemon."""
+        interval = request.args.get("interval", default=15.0, type=float)
+        started = sepolia_service.start_monitoring(interval_seconds=interval)
+        return jsonify({
+            "status": "SUCCESS" if started else "ALREADY_RUNNING",
+            "monitoring_active": True,
+            "continuous_monitoring_active": True,
+            "interval_seconds": interval,
+        })
+
+    @app.route("/api/sepolia/monitoring/stop", methods=["POST"])
+    @app.route("/api/sepolia/stop-monitoring", methods=["POST"])
+    def stop_sepolia_monitoring():
+        """Stop unattended continuous Sepolia monitoring daemon."""
+        stopped = sepolia_service.stop_monitoring()
+        return jsonify({
+            "status": "STOPPED" if stopped else "ALREADY_STOPPED",
+            "monitoring_active": False,
+            "continuous_monitoring_active": False,
+        })
 
     # -------------------------------------------------------------------------
     # API: Zoho Catalyst CloudScale & Budget Endpoints

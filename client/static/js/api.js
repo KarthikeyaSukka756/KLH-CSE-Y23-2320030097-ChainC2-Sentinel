@@ -208,8 +208,25 @@ const API = {
   // -------------------------------------------------------------------------
   // Sepolia Testnet & Experiment Endpoints
   // -------------------------------------------------------------------------
-  async getSepoliaStatus() {
-    return this._fetchJson('/api/sepolia/status');
+  async getSepoliaStatus(force = false) {
+    const qs = force ? '?force=1' : '';
+    return this._fetchJson(`/api/sepolia/status${qs}`);
+  },
+
+  async startContinuousMonitoring(interval = 15.0) {
+    return this._fetchJson(`/api/sepolia/monitoring/start?interval=${encodeURIComponent(interval)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+  },
+
+  async stopContinuousMonitoring() {
+    return this._fetchJson('/api/sepolia/monitoring/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
   },
 
   async getSepoliaTransactions(filter = '', limit = 100) {
