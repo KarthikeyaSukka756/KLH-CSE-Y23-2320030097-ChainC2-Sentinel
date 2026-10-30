@@ -461,7 +461,9 @@ class TestScenarioBStateChangingBoundary:
         assert result.success is False
 
         # Test runner classification for failed B05
-        runner = ScenarioRunner()
+        mock_client.get_chain_id.return_value = "31337"
+        mock_client.eth_get_code.return_value = "0x60806040"
+        runner = ScenarioRunner(network="localhost", rpc_client=mock_client)
         with patch("src.scenarios.runner.SyntheticC2Scenario.run", return_value=result):
             _, record = runner.run_variant("B05")
         assert record.execution_status == ExecutionStatus.FAILED

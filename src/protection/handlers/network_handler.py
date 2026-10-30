@@ -63,19 +63,25 @@ class NetworkContainmentHandler(BaseMitigationHandler):
             action: The executed mitigation action.
 
         Returns:
-            True if containment verified, False otherwise.
+            True if containment verified or recorded as unverifiable without error, False on failure.
         """
+        action.verification_timestamp = datetime.now(timezone.utc)
+
         if self.target_server is not None:
             if not self.target_server.is_containment_active():
                 action.status = MitigationStatus.FAILED
                 action.verification_details = "Target server containment is not active"
                 return False
 
-        action.status = MitigationStatus.VERIFIED
-        action.verification_timestamp = datetime.now(timezone.utc)
-        action.verification_details = "Confirmed HTTP 403 beacon containment active on local target"
-        logger.info("NetworkContainmentHandler: Verified beacon containment active")
-        return True
+            action.status = MitigationStatus.VERIFIED
+            action.verification_details = "Confirmed HTTP 403 beacon containment active on local target"
+            logger.info("NetworkContainmentHandler: Verified beacon containment active")
+            return True
+        else:
+            action.status = MitigationStatus.UNVERIFIABLE
+            action.verification_details = "Independent verification mechanism not attached (target_server is None)"
+            logger.info("NetworkContainmentHandler: Verification unverifiable without attached target server")
+            return True
 
     def rollback(self, action: MitigationAction) -> bool:
         """Roll back network containment, restoring normal beacon acknowledgment.

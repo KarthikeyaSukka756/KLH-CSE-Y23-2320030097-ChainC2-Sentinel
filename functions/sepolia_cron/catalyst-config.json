@@ -1,0 +1,10 @@
+{
+  "deployment": {
+    "name": "sepolia_cron",
+    "type": "cron",
+    "stack": "python_3_11"
+  },
+  "execution": {
+    "main": "main.py"
+  }
+}

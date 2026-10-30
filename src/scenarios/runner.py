@@ -167,6 +167,7 @@ class ScenarioRunner:
                 rpc_client=client,
                 expected_network=self.network,
                 deployment_path=self.deployment_path,
+                verify_bytecode=True,
             )
         except Exception:
             self._validated_alignments.discard(client_key)

@@ -143,28 +143,72 @@ class SyntheticC2Scenario(BaseScenario):
         logger.debug("Scenario B setup (%s): target server available at %s", self.variant_id, self.target_server.base_url)
 
         if self.rpc_client is not None:
+            # Check existing state to avoid unnecessary seeding
             try:
                 latest_res = self.rpc_client.eth_call(to=self.contract_address, data="0x4f5063c4")
-                latest_raw = decode_string(latest_res.result or "") if (latest_res and latest_res.success) else ""
-                needs_seed = True
-                if latest_raw:
-                    try:
-                        p = SyntheticC2Payload.from_raw(latest_raw)
-                        if p.target == self.target_server.beacon_url:
-                            needs_seed = False
-                    except Exception:
-                        pass
-                if needs_seed:
-                    init_payload = SyntheticC2Payload(
-                        scenario="synthetic_c2",
-                        command="BEACON",
-                        target=self.target_server.beacon_url,
-                        parameters={"client_tag": "lab_client_01", "variant_id": "INIT"},
-                    ).to_blockchain_string()
-                    data = "0x7246c8a5" + encode_string(init_payload)
-                    self.rpc_client.eth_send_transaction(to=self.contract_address, data=data)
             except Exception as e:
-                logger.warning("Could not pre-seed C2DataStore: %s", e)
+                raise RuntimeError(f"Scenario B setup failed: error querying C2DataStore state: {e}") from e
+
+            latest_raw = decode_string(latest_res.result or "") if (latest_res and latest_res.success) else ""
+            needs_seed = True
+            if latest_raw:
+                try:
+                    p = SyntheticC2Payload.from_raw(latest_raw)
+                    if p.target == self.target_server.beacon_url:
+                        needs_seed = False
+                except Exception:
+                    needs_seed = True
+
+            if needs_seed:
+                init_payload = SyntheticC2Payload(
+                    scenario="synthetic_c2",
+                    command="BEACON",
+                    target=self.target_server.beacon_url,
+                    parameters={"client_tag": "lab_client_01", "variant_id": "INIT"},
+                ).to_blockchain_string()
+                data = "0x7246c8a5" + encode_string(init_payload)
+
+                try:
+                    tx_res = self.rpc_client.eth_send_transaction(to=self.contract_address, data=data)
+                except Exception as e:
+                    raise RuntimeError(f"Scenario B setup failed: exception during C2DataStore pre-seeding transaction: {e}") from e
+
+                from src.blockchain.rpc_client import RpcTxResult
+                if not isinstance(tx_res, RpcTxResult):
+                    raise RuntimeError(
+                        f"Scenario B setup failed: pre-seeding transaction returned malformed result object: {type(tx_res)}"
+                    )
+
+                if not tx_res.success:
+                    err_detail = tx_res.error_message or tx_res.status
+                    raise RuntimeError(
+                        f"Scenario B setup failed: pre-seeding transaction was not successful: status={tx_res.status}, "
+                        f"error={err_detail}, tx_hash={tx_res.tx_hash}"
+                    )
+
+                if not tx_res.tx_hash:
+                    raise RuntimeError(
+                        f"Scenario B setup failed: pre-seeding transaction missing transaction hash: status={tx_res.status}"
+                    )
+
+                # Ensure receipt status is verified as successful
+                receipt = tx_res.response_result.get("receipt") if (tx_res.response_result and isinstance(tx_res.response_result, dict)) else None
+                if not receipt or not isinstance(receipt, dict):
+                    if tx_res.status == "unconfirmed":
+                        raise RuntimeError(
+                            f"Scenario B setup failed: pre-seeding transaction receipt unconfirmed/timed out: tx_hash={tx_res.tx_hash}"
+                        )
+                    raise RuntimeError(
+                        f"Scenario B setup failed: pre-seeding transaction has no verified receipt data: tx_hash={tx_res.tx_hash}"
+                    )
+
+                r_status = receipt.get("status")
+                if r_status not in ("0x1", 1, True, "1"):
+                    raise RuntimeError(
+                        f"Scenario B setup failed: pre-seeding transaction receipt status indicates revert: {r_status}, tx_hash={tx_res.tx_hash}"
+                    )
+
+                logger.debug("Scenario B setup successfully pre-seeded C2DataStore: tx_hash=%s", tx_res.tx_hash)
 
     def execute(self) -> dict[str, Any]:
         """Execute the synthetic C2-like multi-source event sequence for the configured variant.

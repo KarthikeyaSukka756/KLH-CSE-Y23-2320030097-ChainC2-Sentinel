@@ -36,8 +36,14 @@ class MitigationStatus(str, enum.Enum):
     """Lifecycle status of an individual mitigation action."""
 
     REQUESTED = "requested"  # Action planned but not yet executed
+    PROPOSED = "proposed"    # Planned/proposed mitigation action
+    AUTHORIZED = "authorized"  # Authorized by policy engine
+    EXECUTING = "executing"  # Action in progress
     EXECUTED = "executed"    # Action executed by mitigation handler
+    VERIFYING = "verifying"  # Action undergoing independent verification
     VERIFIED = "verified"    # Action independently verified as effective
+    UNVERIFIABLE = "unverifiable"  # Independent verification mechanism not attached or unavailable
+    PARTIALLY_VERIFIED = "partially_verified"  # Action verified with limitations
     FAILED = "failed"        # Action execution or verification failed
     ROLLED_BACK = "rolled_back"  # Action reverted during clean-up or failure recovery
 
@@ -46,8 +52,11 @@ class DefensePlanStatus(str, enum.Enum):
     """Overall status of a defensive response plan."""
 
     PENDING = "pending"
+    PROPOSED = "proposed"
     EXECUTED = "executed"
     VERIFIED = "verified"
+    PARTIALLY_VERIFIED = "partially_verified"
+    UNVERIFIABLE = "unverifiable"
     FAILED = "failed"
     SKIPPED = "skipped"  # When detection was not triggered (e.g. Scenario A negative control)
     ROLLED_BACK = "rolled_back"
@@ -161,6 +170,7 @@ class DefenseExecutionRecord(BaseModel):
     )
     actions_executed: int = Field(..., description="Count of successfully executed actions")
     actions_verified: int = Field(..., description="Count of successfully verified actions")
+    actions_unverifiable: int = Field(default=0, description="Count of actions where independent verification was unattached")
     actions_failed: int = Field(..., description="Count of failed actions")
     started_at: datetime = Field(..., description="Execution start timestamp")
     completed_at: datetime = Field(..., description="Execution completion timestamp")

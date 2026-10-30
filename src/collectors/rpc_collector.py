@@ -74,6 +74,10 @@ class RpcTelemetryCollector:
         Returns:
             A SentinelEvent with source=RPC and populated RpcInfo.
         """
+        norm_status = "success" if str(status).strip().lower() == "success" else "error"
+        err = error_message
+        if norm_status == "error" and not err and status != "error":
+            err = f"RPC operation failed with status: {status}"
         rpc_info = RpcInfo(
             rpc_endpoint=self._rpc_endpoint,
             upstream_endpoint=self._upstream_endpoint,
@@ -81,8 +85,8 @@ class RpcTelemetryCollector:
             request_id=request_id,
             request_params=request_params,
             response_result=response_result,
-            status=status,
-            error_message=error_message,
+            status=norm_status,
+            error_message=err,
             duration_ms=duration_ms,
         )
 

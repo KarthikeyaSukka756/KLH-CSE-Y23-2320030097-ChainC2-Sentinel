@@ -167,7 +167,7 @@ def verify_rpc_and_registry_alignment(
     rpc_client: Any,
     expected_network: str,
     deployment_path: Optional[Union[str, Path]] = None,
-    verify_bytecode: bool = False,
+    verify_bytecode: bool = True,
 ) -> dict[str, str]:
     """Verify that connected RPC chain ID matches expected network and registry metadata before using addresses.
 
@@ -219,8 +219,13 @@ def verify_rpc_and_registry_alignment(
                 f"RPC client does not support eth_get_code for bytecode verification on network '{expected_network}'."
             )
         for name, addr in addresses.items():
-            code = rpc_client.eth_get_code(addr)
-            if not code or code == "0x" or len(code) <= 2:
+            try:
+                code = rpc_client.eth_get_code(addr)
+            except Exception as e:
+                raise DeploymentResolutionError(
+                    f"RPC error querying bytecode for contract '{name}' at {addr} on network '{expected_network}': {e}"
+                ) from e
+            if not isinstance(code, str) or not code.startswith("0x") or code == "0x" or len(code) <= 2:
                 raise DeploymentResolutionError(
                     f"Contract '{name}' at {addr} has no on-chain bytecode on network '{expected_network}' (eth_getCode returned '{code}')."
                 )

@@ -77,17 +77,23 @@ class RpcFilterHandler(BaseMitigationHandler):
             action.error_message = "Missing contract address for verification"
             return False
 
+        action.verification_timestamp = datetime.now(timezone.utc)
+
         if self.proxy is not None:
             if not self.proxy.is_contract_filtered(contract_address):
                 action.status = MitigationStatus.FAILED
                 action.verification_details = "Proxy did not report contract as filtered"
                 return False
 
-        action.status = MitigationStatus.VERIFIED
-        action.verification_timestamp = datetime.now(timezone.utc)
-        action.verification_details = f"Confirmed application-layer filter active for {contract_address}"
-        logger.info("RpcFilterHandler: Verified filter active for %s", contract_address)
-        return True
+            action.status = MitigationStatus.VERIFIED
+            action.verification_details = f"Confirmed application-layer filter active for {contract_address}"
+            logger.info("RpcFilterHandler: Verified filter active for %s", contract_address)
+            return True
+        else:
+            action.status = MitigationStatus.UNVERIFIABLE
+            action.verification_details = "Independent verification mechanism not attached (proxy is None)"
+            logger.info("RpcFilterHandler: Verification unverifiable without attached proxy")
+            return True
 
     def rollback(self, action: MitigationAction) -> bool:
         """Roll back the contract filter, restoring normal query capability.

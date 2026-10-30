@@ -177,12 +177,35 @@
 }
 
 .btn-danger {
-  background-color: rgba(244, 63, 94, 0.16);
-  color: #fb7185;
-  border-color: rgba(244, 63, 94, 0.4);
+  background-color: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
 }
 .btn-danger:hover:not(:disabled) {
-  background-color: rgba(244, 63, 94, 0.3);
+  background-color: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.3);
+}
+
+.btn-warning {
+  background-color: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.btn-warning:hover:not(:disabled) {
+  background-color: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+}
+
+.table-responsive {
+  position: relative;
+}
+.table-responsive thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-card);
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--border-subtle);
 }
 
 .btn:disabled {

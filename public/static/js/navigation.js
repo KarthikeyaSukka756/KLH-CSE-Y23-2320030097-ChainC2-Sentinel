@@ -5,7 +5,7 @@
 
 class NavigationManager {
   constructor() {
-    this.currentSection = 'overview';
+    this.currentSection = 'live-monitor';
     this.subscribers = [];
     this._initialized = false;
     this.init();
@@ -39,8 +39,20 @@ class NavigationManager {
   }
 
   handleHashChange() {
-    const hash = window.location.hash.replace('#', '').trim();
-    const targetSection = hash || 'overview';
+    const rawHash = window.location.hash.replace('#', '').trim();
+    // Normalization aliases
+    const aliases = {
+      'overview': 'live-monitor',
+      'sepolia-monitor': 'live-monitor',
+      'detection': 'detection-scoring',
+      'protection': 'mitigation-verification',
+      'evidence': 'audit-trail',
+      'evaluation': 'system-health',
+      'research': 'audit-trail',
+      'history': 'investigations',
+      'experiment-history': 'investigations',
+    };
+    const targetSection = aliases[rawHash] || rawHash || 'live-monitor';
     this.navigateTo(targetSection);
   }
 
@@ -51,8 +63,8 @@ class NavigationManager {
                           document.getElementById(sectionId);
 
     if (!targetElement) {
-      console.warn(`Section '${sectionId}' not found. Defaulting to overview.`);
-      sectionId = 'overview';
+      console.warn(`Section '${sectionId}' not found. Defaulting to live-monitor.`);
+      sectionId = 'live-monitor';
     }
 
     this.currentSection = sectionId;
@@ -84,17 +96,13 @@ class NavigationManager {
     const pageTitleEl = document.getElementById('current-page-title');
     if (pageTitleEl) {
       const titles = {
-        'overview': 'Executive Research Overview',
-        'experiment-center': 'Laboratory Experiment Center',
-        'live-telemetry': 'Telemetry Event Stream',
-        'correlation': 'Cross-Layer Sequence Correlation',
-        'detection': 'Explainable Rule-Based Detection & Scoring',
-        'protection': 'Phase 2 Defensive Response & Containment',
-        'evaluation': 'Empirical Evaluation & Performance Analytics',
-        'experiment-history': 'Experiment Run History & Forensic Chain',
-        'history': 'Experiment Run History & Forensic Chain',
-        'evidence': 'Forensic Evidence Explorer & SHA-256 Audit',
-        'research': 'Research Synthesis, Observations & Reports',
+        'live-monitor': 'Live Sepolia Monitor & Ingestion Pipeline',
+        'alerts': 'Durable Security Alerts & Threat Detections',
+        'investigations': 'Forensic Investigations & Multi-Layer Evidence Explorer',
+        'detection-scoring': 'Explainable 6-Criteria Scoring & Detection Engine',
+        'mitigation-verification': 'Defensive Mitigation, Verification & Safety Containment',
+        'audit-trail': 'Cryptographic Audit Trail & Forensic Snapshot Integrity',
+        'system-health': 'System Component Health & Autonomous Generator Monitor',
       };
       pageTitleEl.textContent = titles[sectionId] || 'ChainC2 Sentinel';
     }

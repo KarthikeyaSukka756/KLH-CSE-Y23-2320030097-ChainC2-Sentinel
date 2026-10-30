@@ -104,9 +104,15 @@ class TestBeaconRedirectSecurity:
     def test_normal_successful_loopback_beacon_still_works(self):
         """Standard B01 loopback beaconing to a 200 OK target continues to work normally."""
         with LocalHttpTargetServer(host="127.0.0.1", port=0) as target_srv:
+            mock_payload = SyntheticC2Payload(
+                command="BEACON",
+                target=f"http://127.0.0.1:{target_srv.port}/beacon",
+            ).to_blockchain_string()
+            mock_rpc = _make_mock_rpc_client(mock_payload)
             scenario = SyntheticC2Scenario(
                 target_server=target_srv,
                 run_id="run-c2-normal-beacon",
+                rpc_client=mock_rpc,
             )
             result = scenario.run()
 

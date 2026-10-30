@@ -41,6 +41,10 @@ class ScenarioWorkerRegistry:
         """
         key = worker_id or f"{process_name}:{pid}"
         with self._lock:
+            existing = self._workers.get(key)
+            if existing and existing.get("isolated"):
+                logger.info("WorkerRegistry: Worker %s (PID=%d) is already registered and ISOLATED; preserving containment state", process_name, pid)
+                return key
             self._workers[key] = {
                 "process_name": process_name,
                 "pid": pid,

@@ -249,3 +249,7 @@ data/evidence/evidence_*.json
 contract-artifacts/
 deployed-addresses.json
 .vercel
+
+# Zoho Catalyst Local Artifacts
+appsail/vendor/
+.catalystrc

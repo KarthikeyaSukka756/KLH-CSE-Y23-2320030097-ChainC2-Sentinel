@@ -3,10 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChainC2 Sentinel — Master Dashboard</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
-    <link rel="stylesheet" href="/static/css/layout.css">
-    <link rel="stylesheet" href="/static/css/components.css">
+    <title>ChainC2 Sentinel — Master Research Dashboard</title>
+    <link rel="stylesheet" href="static/css/variables.css">
+    <link rel="stylesheet" href="static/css/layout.css">
+    <link rel="stylesheet" href="static/css/components.css">
+    <style>
+        .timeline-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--border-color);
+            margin-bottom: 0.5rem;
+        }
+        .timeline-step.completed { border-left-color: var(--color-success); }
+        .timeline-step.triggered { border-left-color: var(--color-danger); }
+        .timeline-step.active { border-left-color: var(--color-primary); }
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .metric-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .layer-box {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+        }
+        .layer-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .criteria-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+        .criteria-row:last-child { border-bottom: none; }
+        .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+    </style>
 </head>
 <body>
     <div class="app-layout">
@@ -18,41 +76,33 @@
             </div>
 
             <nav class="nav-menu">
-                <a href="#overview" class="nav-item active" data-section="overview">
-                    <span class="nav-icon">📊</span> Overview
+                <a href="#live-monitor" class="nav-item active" data-section="live-monitor">
+                    <span class="nav-icon">📡</span> Live Monitor
                 </a>
-                <a href="#experiment-center" class="nav-item" data-section="experiment-center">
-                    <span class="nav-icon">🧪</span> Experiment Center
+                <a href="#alerts" class="nav-item" data-section="alerts">
+                    <span class="nav-icon">🚨</span> Alerts
                 </a>
-                <a href="#live-telemetry" class="nav-item" data-section="live-telemetry">
-                    <span class="nav-icon">📡</span> Live Telemetry
+                <a href="#investigations" class="nav-item" data-section="investigations">
+                    <span class="nav-icon">🔍</span> Investigations
                 </a>
-                <a href="#correlation" class="nav-item" data-section="correlation">
-                    <span class="nav-icon">🔗</span> Correlation View
+                <a href="#detection-scoring" class="nav-item" data-section="detection-scoring">
+                    <span class="nav-icon">🎯</span> Detection Scoring
                 </a>
-                <a href="#detection" class="nav-item" data-section="detection">
-                    <span class="nav-icon">🎯</span> Detection & Scoring
+                <a href="#mitigation-verification" class="nav-item" data-section="mitigation-verification">
+                    <span class="nav-icon">🛡️</span> Mitigation & Verification
                 </a>
-                <a href="#protection" class="nav-item" data-section="protection">
-                    <span class="nav-icon">🛡️</span> Phase 2 Protection
+                <a href="#audit-trail" class="nav-item" data-section="audit-trail">
+                    <span class="nav-icon">📁</span> Audit Trail
                 </a>
-                <a href="#evaluation" class="nav-item" data-section="evaluation">
-                    <span class="nav-icon">📈</span> Evaluation Metrics
-                </a>
-                <a href="#experiment-history" class="nav-item" data-section="experiment-history">
-                    <span class="nav-icon">📜</span> Experiment History
-                </a>
-                <a href="#evidence" class="nav-item" data-section="evidence">
-                    <span class="nav-icon">📁</span> Evidence Explorer
-                </a>
-                <a href="#research" class="nav-item" data-section="research">
-                    <span class="nav-icon">📖</span> Research & Reports
+                <a href="#system-health" class="nav-item" data-section="system-health">
+                    <span class="nav-icon">🩺</span> System Health
                 </a>
             </nav>
 
             <div style="padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-muted);">
                 <div>Status: <span id="status-dashboard" class="badge badge-success" style="font-size: 0.65rem;">READY</span></div>
-                <div style="margin-top: 4px;">Laboratory: <span class="font-mono">127.0.0.1:5000</span></div>
+                <div style="margin-top: 4px;">Network: <span class="font-mono" style="color: #38bdf8;">Ethereum Sepolia</span></div>
+                <div style="margin-top: 2px;">Chain ID: <span class="font-mono">11155111</span></div>
             </div>
         </aside>
 
@@ -60,267 +110,249 @@
         <main class="main-content">
             <!-- Top Header -->
             <header class="top-header">
-                <div>
-                    <h1 class="header-title">ChainC2 Sentinel</h1>
-                    <p class="header-subtitle">Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels</p>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="live-indicator" style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px;">
+                        <span class="status-dot pulsing" style="background-color: var(--color-benign);"></span>
+                        <span style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--color-benign);">SEPOLIA LIVE OBSERVER</span>
+                    </div>
+                    <div>
+                        <h1 class="header-title" id="current-page-title">ChainC2 Sentinel</h1>
+                        <p class="header-subtitle">Cybersecurity Framework for Detecting Blockchain-Mediated Command-and-Control Channels</p>
+                    </div>
                 </div>
-                <div class="system-pills" style="display: flex; gap: 0.5rem; align-items: center;">
-                    <span id="status-blockchain" class="badge badge-neutral">LOCAL_STANDALONE</span>
-                    <span id="status-telemetry" class="badge badge-primary">TELEMETRY_READY</span>
-                    <span id="status-detection" class="badge badge-success">ENGINE_ACTIVE</span>
-                    <span id="status-protection" class="badge badge-success">DEFENSE_READY</span>
+                <div class="system-pills" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <span class="badge" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); color: #38bdf8; font-weight: 600;">ETH SEPOLIA (11155111)</span>
+                    <span id="sepolia-connection-badge" class="badge badge-neutral">INITIALIZING...</span>
+                    <span id="status-detection" class="badge badge-success">DETECTOR: ACTIVE</span>
+                    <span id="status-protection" class="badge badge-warning" title="Local process isolation & cryptographic evidence preservation active; network/RPC proxies unattached in container.">DEFENSE: PARTIALLY_ACTIVE (LOCAL ONLY)</span>
                 </div>
             </header>
 
             <!-- ========================================================================= -->
-            <!-- 1. OVERVIEW SECTION -->
+            <!-- 1. LIVE MONITOR SECTION (#live-monitor) -->
             <!-- ========================================================================= -->
-            <section id="sec-overview" class="spa-section active">
+            <section id="sec-live-monitor" class="spa-section active">
                 <div class="section-header">
-                    <h2 class="section-title">Executive Research Overview</h2>
-                    <p class="section-desc">Real-time status of Phase 1 Detection and Phase 2 Protection pipelines in the controlled laboratory environment.</p>
+                    <h2 class="section-title">Live Sepolia Monitor & Ingestion Pipeline</h2>
+                    <p class="section-desc">Continuous ingestion of Ethereum Sepolia testnet blocks, transaction stream, and real-time monitoring cursor.</p>
                 </div>
 
-                <!-- Research Pipeline Diagram -->
+                <!-- Cursor and Sepolia Metrics -->
+                <div class="grid grid-4" style="margin-bottom: 1.5rem;">
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">SEPOLIA HEAD BLOCK</span>
+                        <span class="metric-val font-mono" id="sepolia-latest-block">—</span>
+                        <span class="text-muted" id="sepolia-last-poll" style="font-size: 0.7rem;">Polled: —</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">INGESTED CURSOR</span>
+                        <span class="metric-val font-mono" id="sepolia-cursor-block">—</span>
+                        <span class="text-muted" id="sepolia-cursor-lag" style="font-size: 0.7rem;">Lag: 0 blocks</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">OBSERVED TRANSACTIONS</span>
+                        <span class="metric-val font-mono" id="sepolia-total-txs">0</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Ambient Sepolia traffic</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">DURABLE ALERTS</span>
+                        <span class="metric-val font-mono" id="sepolia-total-alerts" style="color: var(--color-danger);">0</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Autonomous detections</span>
+                    </div>
+                </div>
+
+                <!-- Live Pipeline Controls -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Authoritative Research Pipeline</span></div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0;">
-                        <div class="badge badge-neutral" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Controlled Scenarios</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Multi-Layer Telemetry</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-warning" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Cross-Layer Correlation</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-secondary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Weighted Scoring (Max 100)</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-danger" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Detection Decision</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-success" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Phase 2 Controlled Mitigation</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">Preserved Evidence</div>
-                    </div>
-                </div>
-
-                <!-- Experiment Summary Cards -->
-                <div class="stat-grid" style="margin-bottom: 1.5rem;">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Experiments</div>
-                        <div id="stat-total-experiments" class="stat-value font-mono">—</div>
-                        <div class="stat-sub">30 Benchmark + Dynamic Runs</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Scenario Distribution</div>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-                            <span class="badge badge-primary" title="Scenario A">A: <span id="stat-scenario-a">0</span></span>
-                            <span class="badge badge-danger" title="Scenario B">B: <span id="stat-scenario-b">0</span></span>
-                            <span class="badge badge-secondary" title="Scenario C">C: <span id="stat-scenario-c">0</span></span>
-                        </div>
-                        <div class="stat-sub">Benign / C2 / Legitimate DApp</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Triggered Detections</div>
-                        <div id="stat-triggered-detections" class="stat-value font-mono" style="color: var(--color-danger);">—</div>
-                        <div class="stat-sub"><span id="stat-non-triggered">0</span> Below Threshold</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Protection Executions</div>
-                        <div id="stat-protection-execs" class="stat-value font-mono" style="color: var(--color-success);">—</div>
-                        <div class="stat-sub">Mitigations executed</div>
-                    </div>
-                </div>
-
-                <!-- Detection Benchmark Metrics Cards -->
-                <div class="stat-grid" style="margin-bottom: 1.5rem;">
-                    <div class="stat-card">
-                        <div class="stat-label">Precision</div>
-                        <div id="stat-precision" class="stat-value font-mono" style="color: var(--color-success);">100.0%</div>
-                        <div class="stat-sub">0 False Positives</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Recall / Sensitivity</div>
-                        <div id="stat-recall" class="stat-value font-mono" style="color: var(--color-success);">100.0%</div>
-                        <div class="stat-sub">0 False Negatives</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">False Positive Rate</div>
-                        <div id="stat-fpr" class="stat-value font-mono" style="color: var(--color-success);">0.0%</div>
-                        <div class="stat-sub">Across 20 Benign runs</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">F1-Score</div>
-                        <div id="stat-f1" class="stat-value font-mono" style="color: var(--color-primary);">1.000</div>
-                        <div class="stat-sub">Optimal Detection</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Confusion Counts</div>
-                        <div class="stat-value font-mono" style="font-size: 1.25rem;">
-                            <span style="color: var(--color-success);">TP:<span id="stat-tp">10</span></span>
-                            <span style="color: var(--color-primary); margin-left: 0.5rem;">TN:<span id="stat-tn">20</span></span>
-                        </div>
-                        <div class="stat-sub">
-                            <span>FP: <span id="stat-fp" class="font-mono">0</span></span> |
-                            <span>FN: <span id="stat-fn" class="font-mono">0</span></span>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">📡 Live Monitor & Ingestion Controls</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <span id="continuous-daemon-status" class="badge badge-neutral">DAEMON: IDLE</span>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Mean Detection Latency</div>
-                        <div id="stat-avg-latency" class="stat-value font-mono" style="color: var(--text-primary); font-size: 1.25rem;">0.10 ms</div>
-                        <div class="stat-sub">Min: <span id="stat-min-latency" class="font-mono">0.05 ms</span> | Max: <span id="stat-max-latency" class="font-mono">0.69 ms</span></div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                        <button id="btn-sepolia-poll" class="btn btn-primary btn-sm">⚡ Poll Latest Block Now</button>
+                        <button id="btn-toggle-continuous" class="btn btn-secondary btn-sm">▶ Start Continuous Ingestion</button>
+                        <button id="btn-sepolia-refresh-status" class="btn btn-secondary btn-sm">🔄 Refresh Status</button>
+                        <button id="btn-cloudscale-trigger-cron" class="btn btn-secondary btn-sm">⏱ Trigger CloudScale Cron</button>
+                        <div id="sepolia-action-feedback" style="font-size: 0.8rem; margin-left: auto;"></div>
                     </div>
                 </div>
 
-                <!-- Latest Activity Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">Recent Experiment Activity</span>
-                        <a href="#experiment-history" class="btn btn-secondary btn-sm" onclick="Navigation.navigateTo('experiment-history')">View All Runs</a>
-                    </div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>Run ID</th>
-                                    <th>Scenario</th>
-                                    <th>Score / Threshold</th>
-                                    <th>Detection</th>
-                                    <th>Classification</th>
-                                    <th>Protection</th>
-                                </tr>
-                            </thead>
-                            <tbody id="overview-activity-body">
-                                <tr><td colspan="7" class="text-center text-muted">Loading experiment history...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ========================================================================= -->
-            <!-- 2. EXPERIMENT CENTER SECTION -->
-            <!-- ========================================================================= -->
-            <section id="sec-experiment-center" class="spa-section">
-                <div class="section-header">
-                    <h2 class="section-title">Controlled Experiment Center</h2>
-                    <p class="section-desc">Execute safe, isolated laboratory experiments across Scenarios A, B, and C with full telemetry collection and correlation.</p>
-                </div>
-
+                <!-- Experiment Center & Controlled Generator Controls -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header">
-                        <span class="card-title">Laboratory Execution Controls</span>
-                        <div id="execution-status"><span class="badge badge-success">LABORATORY READY</span></div>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="card-title">🧪 Experiment Center — Workload &amp; Telemetry Generators</span>
+                        <span id="generator-status-badge" class="badge badge-neutral">GENERATOR: STOPPED</span>
                     </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Controlled laboratory scenarios executed against isolated telemetry. Ground truth is strictly segregated from detection logic and written only to evaluation storage.
+                    </p>
 
-                    <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--color-primary); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-secondary);">
-                        <strong>Environment Distinction:</strong> Experiment execution operates with live Hardhat EVM smart contracts and local telemetry collectors in the laboratory environment. In public cloud deployments (e.g. Vercel), execution is safely restricted while all authoritative benchmark runs, telemetry traces, correlation graphs, and evidence bundles remain fully inspectable below and across all tabs.
-                    </div>
-                    <div style="display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 1rem; align-items: flex-end;">
-                        <div class="form-group">
-                            <label class="form-label" for="scenario-select">Scenario</label>
-                            <select id="scenario-select" class="form-select">
-                                <option value="scenario_a">Scenario A — Benign Web3 Traffic</option>
-                                <option value="scenario_b">Scenario B — Synthetic Blockchain-Mediated C2</option>
-                                <option value="scenario_c">Scenario C — Legitimate DApp Baseline</option>
-                            </select>
+                    <!-- Interactive On-Demand Scenarios -->
+                    <div style="margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--text-primary);">
+                            🎯 On-Demand Scenario Triggers:
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="repetitions-select">Repetitions</label>
-                            <select id="repetitions-select" class="form-select">
-                                <option value="1">1 Repetition</option>
-                                <option value="3">3 Repetitions</option>
-                                <option value="5">5 Repetitions</option>
-                            </select>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                            <button id="btn-sepolia-pos-c2" class="btn btn-danger btn-sm" title="Executes 4-layer synthetic C2 pattern (Endpoint + RPC + Contract + Network) triggering alert score 100.0">🚨 Run Scenario B: Synthetic C2</button>
+                            <button id="btn-sepolia-benign" class="btn btn-secondary btn-sm" title="Executes benign Web3 contract read negative control (Score 0.0)">🛡️ Run Scenario A: Benign Web3</button>
+                            <button id="btn-sepolia-dapp" class="btn btn-secondary btn-sm" title="Executes legitimate multi-step dApp workflow control (Score 25.0)">⚖️ Run Scenario C: Legitimate dApp</button>
                         </div>
-                        <button id="btn-run-selected" class="btn btn-primary">
-                            Run Selected
-                        </button>
-                        <button id="btn-run-all3" class="btn btn-secondary" title="Runs Scenarios A, B, and C sequentially with separate run_ids">
-                            Run All 3
-                        </button>
                     </div>
 
-                    <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); border-left: 3px solid var(--color-warning);">
-                        <strong>Isolation Guarantee:</strong> "Run All 3" executes three completely independent experiments (Scenario A, Scenario B, and Scenario C). Each receives a unique <code class="font-mono">run_id</code>, isolated telemetry log, and independent correlation chain. No telemetry is ever merged across runs.
-                    </div>
-                </div>
-
-                <!-- Execution Progress Log -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Laboratory Console Output</span></div>
-                    <div id="execution-log" style="height: 140px; overflow-y: auto; background: var(--bg-primary); padding: 0.75rem; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px;">
-                        <div class="text-muted">[READY] Laboratory execution engine initialized. Concurrency lock is active.</div>
-                    </div>
-                </div>
-
-                <!-- Live Execution Results -->
-                <div class="card">
-                    <div class="card-header"><span class="card-title">Latest Execution Results</span></div>
-                    <div id="experiment-results-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                        <div class="text-muted" style="font-size: 0.85rem;">Run an experiment above to view immediate results and multi-layer trace cards.</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ========================================================================= -->
-            <!-- 3. LIVE TELEMETRY SECTION -->
-            <!-- ========================================================================= -->
-            <section id="sec-live-telemetry" class="spa-section">
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 class="section-title">Telemetry & Event Stream</h2>
-                        <p class="section-desc">Chronological event stream captured across Endpoint, JSON-RPC, Smart Contract, and Network egress layers.</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <span id="telemetry-source-badge" class="badge badge-neutral">CURRENT EXECUTION BATCH</span>
-                        <span id="telemetry-count-badge" class="badge badge-primary">0 Events</span>
-                        <button id="btn-refresh-telemetry" class="btn btn-secondary btn-sm">Refresh</button>
-                    </div>
-                </div>
-
-                <!-- Live Telemetry Controls & Dynamic Summary Panel -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                        <div>
-                            <label for="telemetry-batch-indicator" class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Execution Batch:</label>
-                            <div id="telemetry-batch-indicator" class="font-mono" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); background: var(--bg-tertiary); padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                                Current Execution — <span id="telemetry-batch-timestamp">—</span>
+                    <!-- Dual Generator Modes Grid -->
+                    <div class="grid grid-2" style="gap: 1rem;">
+                        <!-- Mode 1: Step Generator -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-primary);">⏭ Step Generator (Single-Cycle)</span>
+                                <span class="badge badge-primary" style="font-size: 0.65rem;">ON-DEMAND</span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                                Executes exactly <strong>one scenario</strong> per request without spawning a background thread. Returns the execution run ID, scenario, and telemetry summary immediately.
+                            </p>
+                            <button id="btn-gen-step" class="btn btn-primary btn-sm" style="width: 100%; margin-bottom: 0.5rem;" title="Execute exactly one workload rotation step without starting a background thread">⏭ Execute Single Step Cycle</button>
+                            <div id="gen-step-result-box" style="display: none; font-size: 0.72rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 4px; border: 1px solid var(--border-color);">
+                                <div><strong>Run ID:</strong> <span class="font-mono" id="gen-step-run-id">—</span></div>
+                                <div><strong>Scenario:</strong> <span id="gen-step-scenario">—</span></div>
+                                <div><strong>Status:</strong> <span id="gen-step-status" class="badge badge-success" style="font-size:0.65rem;">—</span></div>
+                                <div><strong>Telemetry:</strong> <span id="gen-step-summary" class="text-muted">—</span></div>
                             </div>
                         </div>
-                        <div>
-                            <label for="telemetry-run-scope-select" class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">Run Scope:</label>
-                            <select id="telemetry-run-scope-select" class="form-select" style="font-size: 0.85rem; padding: 0.4rem 0.75rem;">
-                                <option value="ALL">All Runs (Current Execution Batch)</option>
-                                <option value="SCENARIO_A">Scenario A — Benign Web3</option>
-                                <option value="SCENARIO_B">Scenario B — Synthetic C2</option>
-                                <option value="SCENARIO_C">Scenario C — Legitimate DApp</option>
+
+                        <!-- Mode 2: Background Generator -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-warning);">🔄 Background Generator (Bounded Daemon)</span>
+                                <span id="gen-bg-status" class="badge badge-neutral" style="font-size: 0.65rem;">STOPPED</span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                                Rotates scenarios sequentially at 25s intervals. Safely bounded by a maximum cycle limit (default: 4) to prevent runaway cloud compute.
+                            </p>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                                <label for="gen-max-cycles" style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">Max Cycles:</label>
+                                <input type="number" id="gen-max-cycles" class="form-control" min="1" max="50" value="4" style="width: 75px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Bounded maximum cycle limit">
+                                <span id="gen-bg-cycles-text" style="font-size: 0.72rem; color: var(--text-muted);">Completed: <span id="gen-bg-cycles-count" class="font-mono">0</span></span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button id="btn-gen-start" class="btn btn-secondary btn-sm" style="flex: 1;" title="Start bounded background generator daemon">▶ Start</button>
+                                <button id="btn-gen-stop" class="btn btn-secondary btn-sm" style="flex: 1;" title="Stop background generator daemon">⏹ Stop</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Experiment Execution Card (Dynamic) -->
+                <div id="sepolia-experiment-card" class="card" style="display: none; margin-bottom: 1.5rem; border-left: 4px solid var(--color-danger);">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">🚨 Recent Controlled Experiment Result</span>
+                        <span id="sepolia-exp-verdict-badge" class="badge badge-danger">TRIGGERED</span>
+                    </div>
+                    <div class="grid grid-3" style="margin-bottom: 1rem;">
+                        <div><span class="text-muted" style="font-size:0.75rem;">RUN ID:</span> <span class="font-mono" id="sepolia-exp-run-id">—</span></div>
+                        <div><span class="text-muted" style="font-size:0.75rem;">SCENARIO:</span> <span id="sepolia-exp-scenario">—</span></div>
+                        <div><span class="text-muted" style="font-size:0.75rem;">SCORE:</span> <span class="font-mono font-bold" id="sepolia-exp-score">—</span></div>
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <span class="text-muted" style="font-size:0.75rem;">AUTONOMOUS MITIGATION:</span> <span class="font-bold" id="sepolia-exp-mitigation">—</span>
+                    </div>
+                    <div id="sepolia-timeline-container" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+                </div>
+
+                <!-- Sepolia Ingested Transactions Feed Table -->
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="card-title">📋 Observed Sepolia Transactions Feed</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="sepolia-tx-search" placeholder="Search tx hash, address, block..." class="form-control" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; width: 220px;">
+                            <select id="sepolia-tx-filter" class="form-control" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                <option value="">All Transactions</option>
+                                <option value="monitored">Monitored Ambient</option>
+                                <option value="triggered">Triggered Detections</option>
+                                <option value="benign">Benign Traffic</option>
                             </select>
+                            <button id="btn-sepolia-refresh-txs" class="btn btn-secondary btn-sm">🔄</button>
                         </div>
                     </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="font-size: 0.8rem;">
+                            <thead>
+                                <tr>
+                                    <th>Observed At</th>
+                                    <th>Block</th>
+                                    <th>Transaction Hash</th>
+                                    <th>From</th>
+                                    <th>To (Contract)</th>
+                                    <th>Value (ETH)</th>
+                                    <th>Classification</th>
+                                    <th>Detection</th>
+                                    <th>Explorer</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sepolia-tx-table-body">
+                                <tr><td colspan="9" class="text-center text-muted">Loading Sepolia transactions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
-                    <!-- Dynamic Telemetry Summary Stats -->
-                    <div id="telemetry-summary-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
-                        <!-- Populated dynamically by main.js -->
+            <!-- ========================================================================= -->
+            <!-- 2. ALERTS SECTION (#alerts) — DEDICATED PRIMARY SECTION -->
+            <!-- ========================================================================= -->
+            <section id="sec-alerts" class="spa-section">
+                <div class="section-header">
+                    <h2 class="section-title">🚨 Durable Security Alerts & Threat Detections</h2>
+                    <p class="section-desc">Persistent alerts generated autonomously by the 6-criteria correlation engine upon identifying blockchain-mediated C2 activity.</p>
+                </div>
+
+                <!-- Alerts Summary Stats -->
+                <div class="grid grid-4" style="margin-bottom: 1.5rem;">
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">TOTAL ALERTS</span>
+                        <span class="metric-val font-mono" id="alerts-stat-total">0</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Durable alert entries</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">CRITICAL SEVERITY</span>
+                        <span class="metric-val font-mono" id="alerts-stat-critical" style="color: var(--color-danger);">0</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Score &ge; 80.0</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">AUTONOMOUS MITIGATIONS</span>
+                        <span class="metric-val font-mono" id="alerts-stat-mitigated" style="color: var(--color-success);">0</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Containment triggered</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="text-muted" style="font-size: 0.75rem;">FALSE POSITIVE RATE</span>
+                        <span class="metric-val font-mono" style="color: var(--color-success);">0.0000</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">On public Sepolia stream</span>
                     </div>
                 </div>
 
+                <!-- Alerts Table Card -->
                 <div class="card">
-                    <div class="table-container" style="max-height: 520px; overflow-y: auto;">
-                        <table class="table">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">🚨 Active Threat Alerts</span>
+                        <button id="btn-refresh-alerts" class="btn btn-secondary btn-sm">🔄 Refresh Alerts</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="font-size: 0.8rem;">
                             <thead>
                                 <tr>
+                                    <th>Alert ID</th>
                                     <th>Timestamp</th>
-                                    <th>Scenario</th>
-                                    <th>Run ID</th>
-                                    <th>Event ID</th>
-                                    <th>Layer</th>
-                                    <th>Event Type</th>
-                                    <th>Process / Endpoint</th>
-                                    <th>Tx / Contract / Egress</th>
-                                    <th>Status</th>
+                                    <th>Severity</th>
+                                    <th>Score / Threshold</th>
+                                    <th>Scenario / Rule</th>
+                                    <th>Target Contract</th>
+                                    <th>Transaction Hash</th>
+                                    <th>Mitigation</th>
+                                    <th>Investigation Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="telemetry-table-body">
-                                <tr><td colspan="9" class="text-center text-muted">Loading telemetry events...</td></tr>
+                            <tbody id="alerts-table-body">
+                                <tr><td colspan="9" class="text-center text-muted">Loading alerts...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -328,307 +360,278 @@
             </section>
 
             <!-- ========================================================================= -->
-            <!-- 4. CORRELATION SECTION -->
+            <!-- 3. INVESTIGATIONS SECTION (#investigations) -->
             <!-- ========================================================================= -->
-            <section id="sec-correlation" class="spa-section">
+            <section id="sec-investigations" class="spa-section">
                 <div class="section-header">
-                    <h2 class="section-title">Cross-Layer Telemetry Correlation</h2>
-                    <p class="section-desc">Causal ordering and temporal linkage across the four observation stages: Endpoint → RPC → Blockchain → Network.</p>
+                    <h2 class="section-title">🔍 Forensic Incident Investigations</h2>
+                    <p class="section-desc">Comprehensive cross-layer incident evidence, 9-stage forensic execution timeline, and verified correlation telemetry.</p>
                 </div>
 
-                <!-- Run Selector for Correlation -->
+                <!-- Investigation Selector Card -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="correlation-run-select" class="form-label" style="margin-bottom: 0;">Selected Experiment Run:</label>
-                        <select id="correlation-run-select" class="form-select" style="max-width: 450px;">
-                            <option>Loading runs...</option>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">Select Active Investigation</span>
+                        <button id="btn-refresh-investigations" class="btn btn-secondary btn-sm">🔄 Refresh List</button>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <label for="investigation-select" style="font-size: 0.85rem; font-weight: 600;">Investigation Record:</label>
+                        <select id="investigation-select" class="form-control" style="max-width: 500px; font-size: 0.85rem;">
+                            <option value="">-- Select an Investigation --</option>
                         </select>
+                        <span id="inv-count-badge" class="badge badge-neutral">0 records</span>
                     </div>
                 </div>
 
-                <!-- Correlation Graph Visualization -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Causal Sequence Visualization</span></div>
-                    <div id="correlation-chain-container">
-                        <!-- Rendered by Charts.renderCorrelationChain -->
+                <!-- Investigation Details Container -->
+                <div id="investigation-detail-card" class="card" style="display: none; margin-bottom: 1.5rem;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <span class="card-title" id="inv-detail-id">INV-SEPOLIA-—</span>
+                                <span id="inv-detail-severity" class="badge badge-danger">CRITICAL</span>
+                                <span id="inv-detail-status" class="badge badge-success">CONTAINED</span>
+                            </div>
+                            <div id="inv-detail-containment-note" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                Containment applies to local host process &amp; evidence preservation only. Sepolia blockchain state is immutable and unreversed; external network/RPC proxies remain unverifiable.
+                            </div>
+                        </div>
+                        <span class="font-mono text-muted" id="inv-detail-time" style="font-size: 0.75rem;">—</span>
                     </div>
+
+                    <!-- Multi-Layer Evidence Grid -->
+                    <h3 style="font-size: 0.9rem; margin: 1rem 0 0.5rem 0;">🔗 Cross-Layer Correlated Telemetry</h3>
+                    <div class="grid grid-2" style="gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="layer-box">
+                            <div class="layer-title"><span>⛓️ Blockchain Layer</span> <span class="badge badge-primary">EVM RPC</span></div>
+                            <div style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div><strong>Transaction:</strong> <span class="font-mono" id="inv-bc-tx">—</span> <span id="inv-bc-tx-badge"></span></div>
+                                <div id="inv-bc-tx-note" style="font-size: 0.7rem; color: var(--text-muted);"></div>
+                                <div><strong>Contract:</strong> <span class="font-mono" id="inv-bc-contract">—</span> <span id="inv-bc-contract-badge"></span></div>
+                                <div id="inv-bc-contract-note" style="font-size: 0.7rem; color: var(--text-muted);"></div>
+                                <div><strong>Block Number:</strong> <span class="font-mono" id="inv-bc-block">—</span></div>
+                                <div><strong>On-Chain Receipt Status:</strong> <span id="inv-bc-receipt-status" class="badge badge-neutral">—</span></div>
+                                <div><strong>Log Evidence:</strong> <span class="font-mono" id="inv-bc-log-evidence" style="word-break: break-all;">—</span></div>
+                                <div style="margin-top: 0.25rem;"><strong>Explorer Link:</strong> <a id="inv-bc-explorer" href="#" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);text-decoration:underline;">View on Etherscan ↗</a> <span id="inv-bc-explorer-note" class="text-muted" style="font-size: 0.7rem;"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="layer-box">
+                            <div class="layer-title"><span>💻 Endpoint Layer</span> <span class="badge badge-warning">PROCESS MONITOR</span></div>
+                            <div style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div><strong>Process:</strong> <span class="font-mono" id="inv-ep-proc">—</span></div>
+                                <div><strong>PID / Memory:</strong> <span class="font-mono" id="inv-ep-pid">—</span></div>
+                                <div><strong>Injected Payload:</strong> <span class="font-mono" id="inv-ep-payload">—</span></div>
+                                <div><strong>Execution Time:</strong> <span id="inv-ep-time">—</span></div>
+                            </div>
+                        </div>
+
+                        <div class="layer-box">
+                            <div class="layer-title"><span>🌐 RPC Layer</span> <span class="badge badge-neutral">JSON-RPC</span></div>
+                            <div style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div><strong>Method:</strong> <span class="font-mono" id="inv-rpc-method">—</span></div>
+                                <div><strong>RPC Endpoint:</strong> <span class="font-mono" id="inv-rpc-endpoint">—</span></div>
+                                <div><strong>Chain ID:</strong> <span class="font-mono">11155111 (Sepolia)</span></div>
+                                <div><strong>Query Latency:</strong> <span id="inv-rpc-latency">—</span></div>
+                            </div>
+                        </div>
+
+                        <div class="layer-box">
+                            <div class="layer-title"><span>📡 Network Egress Layer</span> <span class="badge badge-danger">OUTBOUND BEACON</span></div>
+                            <div style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <div><strong>Destination:</strong> <span class="font-mono" id="inv-net-dest">—</span></div>
+                                <div><strong>Protocol:</strong> <span class="font-mono" id="inv-net-proto">—</span></div>
+                                <div><strong>Egress Delay:</strong> <span id="inv-net-delay">—</span></div>
+                                <div><strong>Correlation Status:</strong> <span class="badge badge-danger">SUBSEQUENT_EGRESS_MATCH</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 9-Stage Forensic Timeline -->
+                    <h3 style="font-size: 0.9rem; margin: 1rem 0 0.5rem 0;">⏱ 9-Stage Forensic Execution Timeline</h3>
+                    <div id="inv-timeline-container" style="margin-bottom: 1.5rem;"></div>
                 </div>
 
-                <!-- Correlation Details -->
-                <div class="card">
-                    <div class="card-header"><span class="card-title">Correlation Metadata & Temporal Delays (Δt)</span></div>
-                    <div id="correlation-meta-details">
-                        <!-- Populated by App.renderRunInCorrelationAndDetection -->
-                    </div>
+                <div id="investigation-empty-state" class="card" style="text-align: center; padding: 3rem 1rem;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-primary);">No Investigation Selected</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 1rem auto;">
+                        Select an investigation record above, or run Scenario B in the Live Monitor to generate a real-time investigation and forensic timeline.
+                    </p>
                 </div>
             </section>
 
             <!-- ========================================================================= -->
-            <!-- 5. DETECTION & SCORING SECTION -->
+            <!-- 4. DETECTION SCORING SECTION (#detection-scoring) -->
             <!-- ========================================================================= -->
-            <section id="sec-detection" class="spa-section">
+            <section id="sec-detection-scoring" class="spa-section">
                 <div class="section-header">
-                    <h2 class="section-title">Detection Engine & Weighted Scoring</h2>
-                    <p class="section-desc">Weighted rule-based aggregation scoring model. Maximum score = 100 points, Detection Threshold = 80 points.</p>
+                    <h2 class="section-title">🎯 Explainable 6-Criteria Detection Scoring Model</h2>
+                    <p class="section-desc">Transparent multi-axis correlation scoring engine. A total score &ge; 80.0 / 100 triggers autonomous defensive containment.</p>
                 </div>
 
-                <!-- Run Selector for Detection -->
+                <!-- 6 Criteria Cards -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="detection-run-select" class="form-label" style="margin-bottom: 0;">Selected Experiment Run:</label>
-                        <select id="detection-run-select" class="form-select" style="max-width: 450px;">
-                            <option>Loading runs...</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Score Meter Card -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Aggregate Detection Score</span></div>
-                    <div id="detection-score-meter">
-                        <!-- Rendered by Charts.renderScoreMeter -->
-                    </div>
-                </div>
-
-                <!-- Rule Breakdown and Metadata -->
-                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem;">
-                    <div class="card">
-                        <div class="card-header"><span class="card-title">Rule Score Contributions</span></div>
-                        <div id="detection-contributions-container">
-                            <!-- Rendered by Charts.renderContributionBars -->
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header"><span class="card-title">Detection Decision & Preserved Evidence</span></div>
-                        <div id="detection-meta-details">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ========================================================================= -->
-            <!-- 6. PROTECTION SECTION -->
-            <!-- ========================================================================= -->
-            <section id="sec-protection" class="spa-section">
-                <div class="section-header">
-                    <h2 class="section-title">Phase 2 — Controlled Protection & Mitigation</h2>
-                    <p class="section-desc">Defensive response pipeline: Detection → Plan → Response → Verification → Audit → Rollback.</p>
-                </div>
-
-                <!-- Protection Metrics Cards -->
-                <div class="stat-grid" style="margin-bottom: 1.5rem;">
-                    <div class="stat-card">
-                        <div class="stat-label">Mitigation Success Rate</div>
-                        <div id="prot-stat-success-rate" class="stat-value font-mono" style="color: var(--color-success);">100.0%</div>
-                        <div class="stat-sub">40/40 Actions verified</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">RPC Blocking Rate</div>
-                        <div id="prot-stat-rpc-blocking" class="stat-value font-mono" style="color: var(--color-success);">100.0%</div>
-                        <div class="stat-sub">10/10 Invocations dropped</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Beacon Blocking Rate</div>
-                        <div id="prot-stat-beacon-blocking" class="stat-value font-mono" style="color: var(--color-success);">100.0%</div>
-                        <div class="stat-sub">10/10 Network drops verified</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Traffic Preservation</div>
-                        <div id="prot-stat-traffic-preservation" class="stat-value font-mono" style="color: var(--color-primary);">100.0%</div>
-                        <div class="stat-sub">22/22 Benign traffic preserved</div>
-                    </div>
-                </div>
-
-                <!-- Protection Workflow Sequence -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Phase 2 Defensive Sequence</span></div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0;">
-                        <div class="badge badge-danger" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">1. Detection Threshold Reached</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-warning" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">2. Evidence Preservation (SHA-256)</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">3. RPC Filtering Activated</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">4. Network Containment</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">5. Process Isolation</div>
-                        <span class="text-muted">➔</span>
-                        <div class="badge badge-success" style="padding: 0.5rem 0.75rem; font-size: 0.75rem;">6. Response Verification & Audit</div>
-                    </div>
-                </div>
-
-                <!-- Protection Runs Table -->
-                <div class="card">
-                    <div class="card-header"><span class="card-title">Phase 2 Live Laboratory Protection Runs</span></div>
-                    <div class="table-container">
-                        <table class="table">
+                    <div class="card-header"><span class="card-title">Scoring Formula & Criteria Weights</span></div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="font-size: 0.85rem;">
                             <thead>
                                 <tr>
-                                    <th>Run ID</th>
-                                    <th>Scenario</th>
-                                    <th>Plan Triggered</th>
-                                    <th>Mitigation Actions</th>
-                                    <th>Verification</th>
-                                    <th>Rollback Status</th>
-                                    <th>Evidence Bundle</th>
-                                </tr>
-                            </thead>
-                            <tbody id="protection-runs-body">
-                                <tr><td colspan="7" class="text-center text-muted">Loading protection evaluation runs...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ========================================================================= -->
-            <!-- 7. EVALUATION SECTION -->
-            <!-- ========================================================================= -->
-            <section id="sec-evaluation" class="spa-section">
-                <div class="section-header">
-                    <h2 class="section-title">Detection & Protection Benchmark Evaluation</h2>
-                    <p class="section-desc">Authoritative empirical metrics derived from 30 detection runs (10 Scenario A, 10 Scenario B, 10 Scenario C) and 22 protection runs.</p>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <!-- Confusion Matrix Card -->
-                    <div class="card">
-                        <div class="card-header"><span class="card-title">Confusion Matrix (30 Controlled Runs)</span></div>
-                        <div id="evaluation-confusion-matrix" style="padding: 1rem 0;">
-                            <!-- Rendered by Charts.renderConfusionMatrix -->
-                        </div>
-                    </div>
-
-                    <!-- Scenario Distribution Card -->
-                    <div class="card">
-                        <div class="card-header"><span class="card-title">Benchmark Scenario Distribution</span></div>
-                        <div id="evaluation-scenario-distribution" style="padding: 1rem 0;">
-                            <!-- Rendered by Charts.renderScenarioDistribution -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Detection Latency Card -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Detection Processing Latency</span></div>
-                    <div id="evaluation-latency-chart">
-                        <!-- Rendered by Charts.renderLatencyChart -->
-                    </div>
-                </div>
-
-                <!-- Full Statistical Table -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Statistical Performance Summary</span></div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Metric</th>
-                                    <th>Value</th>
-                                    <th>Interpretation</th>
+                                    <th>#</th>
+                                    <th>Criterion</th>
+                                    <th>Description</th>
+                                    <th>Weight</th>
+                                    <th>Synthetic C2</th>
+                                    <th>Benign / dApp</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><strong>Precision</strong></td>
-                                    <td class="font-mono font-bold" id="eval-precision">100.0%</td>
-                                    <td>Zero false positive alerts across all 20 benign/baseline Web3 executions.</td>
+                                    <td>1</td>
+                                    <td><strong>Cross-Layer Correlation</strong></td>
+                                    <td>Temporal correlation between RPC query and subsequent endpoint memory modification</td>
+                                    <td><span class="badge badge-primary">10 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+10.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Recall / Sensitivity</strong></td>
-                                    <td class="font-mono font-bold" id="eval-recall">100.0%</td>
-                                    <td>All 10 synthetic blockchain-mediated C2 sequences correctly detected.</td>
+                                    <td>2</td>
+                                    <td><strong>Blockchain Activity Pattern</strong></td>
+                                    <td>Periodic or repetitive polling of smart contract storage via JSON-RPC</td>
+                                    <td><span class="badge badge-primary">10 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+10.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0 / +5.0</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>False Positive Rate (FPR)</strong></td>
-                                    <td class="font-mono font-bold" id="eval-fpr">0.0%</td>
-                                    <td>Legitimate smart contract interactions do not trigger C2 alerts.</td>
+                                    <td>3</td>
+                                    <td><strong>Process Lineage & Memory</strong></td>
+                                    <td>Anomalous child process creation or unauthorized memory page execution</td>
+                                    <td><span class="badge badge-primary">15 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+15.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Specificity</strong></td>
-                                    <td class="font-mono font-bold" id="eval-specificity">100.0%</td>
-                                    <td>No false positives across the 20 evaluated benign/baseline Web3 executions.</td>
+                                    <td>4</td>
+                                    <td><strong>Cryptographic / Stego Payload</strong></td>
+                                    <td>Presence of encrypted hex command strings (AES-256-GCM / base64 markers)</td>
+                                    <td><span class="badge badge-primary">20 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+20.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Accuracy</strong></td>
-                                    <td class="font-mono font-bold" id="eval-accuracy">100.0%</td>
-                                    <td>Overall correctness across the 30-run controlled benchmark dataset.</td>
+                                    <td>5</td>
+                                    <td><strong>C2 Timing & Regularity</strong></td>
+                                    <td>Low jitter intervals consistent with scheduled automated C2 pull cycles</td>
+                                    <td><span class="badge badge-primary">20 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+20.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0 / +10.0</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>F1-Score</strong></td>
-                                    <td class="font-mono font-bold" id="eval-f1">1.000</td>
-                                    <td>Harmonic mean of precision and recall.</td>
+                                    <td>6</td>
+                                    <td><strong>Subsequent Network Egress</strong></td>
+                                    <td>Outbound network connection immediately following blockchain contract retrieval</td>
+                                    <td><span class="badge badge-primary">25 pts</span></td>
+                                    <td><span style="color:var(--color-danger);font-weight:700;">+25.0</span></td>
+                                    <td><span style="color:var(--color-success);">0.0 / +15.0</span></td>
+                                </tr>
+                                <tr style="background: var(--bg-tertiary); font-weight: 700;">
+                                    <td colspan="3"><strong>TOTAL POSSIBLE / THRESHOLD</strong></td>
+                                    <td><strong>100 pts</strong></td>
+                                    <td><span class="badge badge-danger">90.0 - 100.0 (ALERT)</span></td>
+                                    <td><span class="badge badge-success">0.0 - 30.0 (PASS)</span></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); border-left: 3px solid var(--color-primary);">
-                    <strong>Scientific Disclaimer:</strong> "Metrics represent the controlled laboratory benchmark and should not be interpreted as real-world performance estimates."
+                <!-- Interactive Scoring Demonstration View -->
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Live Scoring Engine Diagnostic</span></div>
+                    <div class="grid grid-2" style="gap: 1.5rem;">
+                        <div>
+                            <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Scenario A & C (Benign / dApp Baseline)</h4>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm);">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                                    <span>Observed Score:</span>
+                                    <span class="font-mono font-bold" style="color: var(--color-success);">0.0 - 25.0 / 100.0</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                                    <span>Verdict:</span>
+                                    <span class="badge badge-success">NOT TRIGGERED (BENIGN)</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Defense Action:</span>
+                                    <span class="text-muted">None (Zero Interruption)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Scenario B (Synthetic C2 Attack)</h4>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm);">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                                    <span>Observed Score:</span>
+                                    <span class="font-mono font-bold" style="color: var(--color-danger);">90.0 - 100.0 / 100.0</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                                    <span>Verdict:</span>
+                                    <span class="badge badge-danger">TRIGGERED (C2 DETECTED)</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Defense Action:</span>
+                                    <span class="badge badge-success">AUTONOMOUS CONTAINMENT</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- ========================================================================= -->
-            <!-- 8. EXPERIMENT HISTORY SECTION -->
+            <!-- 5. MITIGATION & VERIFICATION SECTION (#mitigation-verification) -->
             <!-- ========================================================================= -->
-            <section id="sec-experiment-history" class="spa-section">
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 class="section-title">Experiment Run History</h2>
-                        <p class="section-desc">Searchable audit log of all benchmark runs and live executions with multi-layer traceability.</p>
-                    </div>
-                    <span id="history-count" class="badge badge-primary">0 Runs</span>
+            <section id="sec-mitigation-verification" class="spa-section">
+                <div class="section-header">
+                    <h2 class="section-title">🛡️ Automated Defense Mitigation & Verification</h2>
+                    <p class="section-desc">Autonomous multi-layer containment actions and independent post-mitigation verification.</p>
                 </div>
 
-                <!-- Filters -->
+                <!-- Mitigation Controls Card -->
                 <div class="card" style="margin-bottom: 1.5rem;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 1rem;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="filter-scenario">Filter by Scenario</label>
-                            <select id="filter-scenario" class="form-select">
-                                <option value="ALL">All Scenarios</option>
-                                <option value="Scenario A">Scenario A (Benign Web3)</option>
-                                <option value="Scenario B">Scenario B (Synthetic C2)</option>
-                                <option value="Scenario C">Scenario C (Legitimate DApp)</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="filter-detection">Filter by Detection</label>
-                            <select id="filter-detection" class="form-select">
-                                <option value="ALL">All Results</option>
-                                <option value="DETECTED">Detected Only</option>
-                                <option value="NOT_DETECTED">Benign / Non-triggered</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="history-search">Search by Run ID or Keywords</label>
-                            <input type="text" id="history-search" class="form-input" placeholder="e.g. run_a_001, synth_c2...">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">Defensive Mitigation Actions</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="btn-sepolia-rollback" class="btn btn-warning btn-sm">↺ Rollback Active Mitigations</button>
+                            <button id="btn-refresh-mitigations" class="btn btn-secondary btn-sm">🔄 Refresh List</button>
                         </div>
                     </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                        When an alert score exceeds the 80.0 threshold, the defense executor initiates targeted containment without requiring human intervention. Handlers independently verify execution and report `VERIFIED`, `PARTIALLY_VERIFIED`, or `UNVERIFIABLE`.
+                    </p>
                 </div>
 
-                <!-- History Table -->
+                <!-- Mitigations History Table -->
                 <div class="card">
-                    <div class="table-container">
-                        <table class="table">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">Executed Defensive Mitigations</span>
+                        <span id="sepolia-mitigations-count-badge" class="badge badge-neutral">0 Records</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="font-size: 0.8rem;">
                             <thead>
                                 <tr>
-                                    <th>Run ID</th>
-                                    <th>Scenario</th>
-                                    <th>Timestamp</th>
-                                    <th>Ground Truth</th>
-                                    <th>Score / Threshold</th>
-                                    <th>Detection</th>
-                                    <th>Classification</th>
-                                    <th>Protection</th>
-                                    <th>Latency</th>
-                                    <th>Action</th>
+                                    <th>Mitigation ID</th>
+                                    <th>Linked Run ID</th>
+                                    <th>Target Scope</th>
+                                    <th>Defense Status</th>
+                                    <th>Actions Executed</th>
+                                    <th>Verification</th>
+                                    <th>Forensic Bundle</th>
                                 </tr>
                             </thead>
-                            <tbody id="history-table-body">
-                                <tr><td colspan="10" class="text-center text-muted">Loading experiment history...</td></tr>
+                            <tbody id="sepolia-mitigation-table-body">
+                                <tr><td colspan="7" class="text-center text-muted">No mitigations executed in current session.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -636,33 +639,35 @@
             </section>
 
             <!-- ========================================================================= -->
-            <!-- 9. EVIDENCE EXPLORER SECTION -->
+            <!-- 6. AUDIT TRAIL SECTION (#audit-trail) -->
             <!-- ========================================================================= -->
-            <section id="sec-evidence" class="spa-section">
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 class="section-title">Cryptographic Evidence Explorer</h2>
-                        <p class="section-desc">Forensic evidence bundles preserved upon detection threshold breach, cryptographically verified with SHA-256.</p>
-                    </div>
-                    <span id="evidence-count" class="badge badge-primary">0 Bundles</span>
+            <section id="sec-audit-trail" class="spa-section">
+                <div class="section-header">
+                    <h2 class="section-title">📁 Forensic Audit Trail & Cryptographic Evidence</h2>
+                    <p class="section-desc">Tamper-evident forensic evidence bundles verified with SHA-256 integrity checksums (Schema v2.1.0).</p>
                 </div>
 
+                <!-- Evidence Explorer Card -->
                 <div class="card">
-                    <div class="table-container">
-                        <table class="table">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">Tamper-Evident Evidence Bundles</span>
+                        <button id="btn-refresh-evidence" class="btn btn-secondary btn-sm">🔄 Refresh Evidence</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="font-size: 0.8rem;">
                             <thead>
                                 <tr>
                                     <th>Bundle ID</th>
-                                    <th>Run ID</th>
-                                    <th>Timestamp</th>
-                                    <th>Rule ID</th>
-                                    <th>SHA-256 Checksum</th>
-                                    <th>Verification</th>
+                                    <th>Created At</th>
+                                    <th>Schema</th>
+                                    <th>Provenance</th>
+                                    <th>SHA-256 Digest</th>
+                                    <th>Integrity Check</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="evidence-table-body">
-                                <tr><td colspan="7" class="text-center text-muted">Loading preserved evidence bundles...</td></tr>
+                                <tr><td colspan="7" class="text-center text-muted">Loading evidence bundles...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -670,113 +675,125 @@
             </section>
 
             <!-- ========================================================================= -->
-            <!-- 10. RESEARCH & OBSERVATIONS SECTION -->
+            <!-- 7. SYSTEM HEALTH SECTION (#system-health) -->
             <!-- ========================================================================= -->
-            <section id="sec-research" class="spa-section">
-                <div class="section-header">
-                    <h2 class="section-title">Research Synthesis & Observations</h2>
-                    <p class="section-desc">Authoritative research findings, scenario differentiation, methodological boundaries, and report downloads.</p>
+            <section id="sec-system-health" class="spa-section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h2 class="section-title">🩺 System Health, Diagnostics &amp; CloudScale Budget</h2>
+                        <p class="section-desc">Operating status of all ChainC2 Sentinel microservices, Zoho Catalyst budget consumption, and benchmark metrics.</p>
+                    </div>
+                    <div id="system-health-last-updated" class="badge badge-neutral" style="font-size: 0.72rem; padding: 0.35rem 0.6rem;">Last Health Check: —</div>
                 </div>
 
-                <!-- Research Questions & Differentiation -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header"><span class="card-title">Core Research Question & Differentiating Logic</span></div>
-                    <div style="font-size: 1rem; font-style: italic; color: var(--color-primary); margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-left: 3px solid var(--color-primary); border-radius: var(--radius-sm);">
-                        "<span id="research-question">Can cross-layer telemetry correlation detect blockchain-mediated C2-like behavioral sequences while distinguishing them from legitimate Web3 activity?</span>"
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.85rem;">
-                        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border-top: 3px solid var(--color-primary);">
-                            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Scenario A — Benign Web3</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.5;">
-                                Standard JSON-RPC eth_blockNumber & balance polling. No suspicious smart contract state, no dead-drop, no network egress.
-                            </div>
-                            <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-primary">Score: 35 / 100 (Threshold: 80) ➔ No Detection</span>
-                            </div>
-                        </div>
-
-                        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border-top: 3px solid var(--color-secondary);">
-                            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Scenario C — Legitimate DApp</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.5;">
-                                Complex multi-contract interactions, Uniswap/ERC-20 transfers. Legitimate contracts, no C2 instructions, no beacon egress.
-                            </div>
-                            <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-secondary">Score: 35 / 100 (Threshold: 80) ➔ No Detection</span>
-                            </div>
-                        </div>
-
-                        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border-top: 3px solid var(--color-danger);">
-                            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Scenario B — Synthetic C2</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.5;">
-                                Complete correlated sequence: Process context → RPC call → Dead-drop retrieval → C2 command parsing → Matched network egress.
-                            </div>
-                            <div style="margin-top: 0.75rem;">
-                                <span class="badge badge-danger">Score: 100 / 100 (Threshold: 80) ➔ Detection Triggered</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Phase 1 & Phase 2 Summaries -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <!-- Component Status Grid -->
+                <div class="grid grid-3" style="margin-bottom: 1.5rem;">
+                    <!-- 1. Sepolia Monitor -->
                     <div class="card">
-                        <div class="card-header"><span class="card-title">Phase 1 — Detection Findings</span></div>
-                        <p id="phase1-summary" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                            Cross-layer correlation successfully prevented false alarms on normal Web3 and complex DApp traffic by requiring both blockchain-mediated command indicators and subsequent network egress.
-                        </p>
-                    </div>
-                    <div class="card">
-                        <div class="card-header"><span class="card-title">Phase 2 — Defensive Response Findings</span></div>
-                        <p id="phase2-summary" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                            Controlled mitigation demonstrated 100% RPC blocking and beacon containment on confirmed C2 activity, while preserving 100% of legitimate Web3 and DApp transactions with zero false mitigations.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Report Viewing Panel -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header">
-                        <span class="card-title">Authoritative Research Reports</span>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <select id="report-select" class="form-select" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
-                                <option value="DETECTION_ANALYSIS.md">Phase 1 — Detection Analysis</option>
-                                <option value="FINAL_RESEARCH_ANALYSIS.md">Milestone 11 — Final Research Analysis</option>
-                                <option value="PROTECTION_ANALYSIS.md">Phase 2 — Protection Analysis</option>
-                            </select>
-                            <button id="btn-load-report" class="btn btn-secondary btn-sm">Read Report</button>
+                        <div class="card-header"><span class="card-title">Ethereum Sepolia RPC &amp; Monitor</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>Status: <span id="health-rpc-status" class="badge badge-success">CONNECTED</span></div>
+                            <div>Endpoint: <span class="font-mono text-muted" id="sepolia-rpc-url" style="font-size: 0.7rem;">https://ethereum-sepolia-rpc.publicnode.com</span></div>
+                            <div>Chain ID: <span class="font-mono">11155111</span></div>
+                            <div>Block Cursor Lag: <span id="health-cursor-lag" class="badge badge-neutral">0 BLOCKS</span></div>
                         </div>
                     </div>
-                    <div id="report-viewer" style="max-height: 380px; overflow-y: auto; background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                        <div class="text-muted">Select an authoritative research report above and click "Read Report" to inspect the complete findings.</div>
+
+                    <!-- 2. Detection Engine -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Detection &amp; Correlation Engine</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>Status: <span id="health-det-status" class="badge badge-success">ACTIVE</span></div>
+                            <div>Active Rule: <span class="font-mono" id="health-det-rule">RULE-CHAINC2-001 (6 Criteria)</span></div>
+                            <div>Scoring Threshold: <span class="font-mono font-bold" id="health-det-threshold" style="color:var(--color-danger);">80.0 / 100.0</span></div>
+                            <div>Total Alerts Evaluated: <span class="font-mono font-bold" id="health-det-alerts">0</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Telemetry Ingestion -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Telemetry Ingestion Pipeline</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>Status: <span id="health-telem-status" class="badge badge-success">ACTIVE</span></div>
+                            <div>Intake Endpoint: <span class="font-mono text-muted" style="font-size: 0.7rem;">POST /api/telemetry/ingest</span></div>
+                            <div>Events Ingested: <span class="font-mono font-bold" id="health-telem-count">0</span></div>
+                            <div>Stream: <span class="font-mono text-muted" style="font-size: 0.7rem;">events.jsonl (Idempotent)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Controlled Generator & VM Architecture -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Controlled Generator &amp; VM Architecture</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>State: <span id="health-gen-state" class="badge badge-neutral">STOPPED</span></div>
+                            <div>Current Scenario: <span class="font-mono" id="health-gen-scenario">scenario_a_benign</span></div>
+                            <div>Completed Cycles: <span class="font-mono" id="health-gen-cycles">0</span></div>
+                            <div>VM Status: <span id="health-gen-vm" class="badge badge-neutral" title="No external hypervisor provisioned. Running local decoupled simulation.">NO_EXTERNAL_VM_PROVISIONED</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Defense Readiness -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Defense Readiness &amp; Mitigation</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>Readiness: <span id="health-defense-status" class="badge badge-warning">PARTIALLY_ACTIVE</span></div>
+                            <div>Process Isolation: <span id="health-defense-isolation" class="badge badge-success">VERIFIED</span></div>
+                            <div>Evidence Preservation: <span id="health-defense-evidence" class="badge badge-success">VERIFIED (SHA-256)</span></div>
+                            <div>Network/RPC Containment: <span id="health-defense-network" class="badge badge-warning" title="Containerized serverless environment has unattached kernel proxy controls">UNVERIFIABLE</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Catalyst CloudScale Budget -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Catalyst CloudScale Budget</span></div>
+                        <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                            <div>State: <span id="cloudscale-operating-state" class="badge badge-success">NORMAL</span></div>
+                            <div>Authorized: <span class="font-mono font-bold" id="cloudscale-auth-budget">$250.0000 USD</span></div>
+                            <div>Remaining: <span class="font-mono" id="cloudscale-remaining-budget">$249.9986 USD</span></div>
+                            <div>Consumed: <span class="font-mono text-muted" id="cloudscale-consumed-budget">$0.0014 USD</span> (<span id="cloudscale-pct-consumed">0.0%</span>)</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Safe Downloads Panel -->
+                <!-- Model Evaluation Metrics Card -->
                 <div class="card">
-                    <div class="card-header"><span class="card-title">Authoritative Project Artifact Downloads</span></div>
-                    <div id="downloads-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        <!-- Populated by App.loadDownloads -->
+                    <div class="card-header"><span class="card-title">Formal Evaluation Metrics (Frozen Benchmark)</span></div>
+                    <div class="grid grid-4" style="margin-bottom: 1rem;">
+                        <div class="metric-card">
+                            <span class="text-muted" style="font-size:0.75rem;">PRECISION</span>
+                            <span class="metric-val font-mono" style="color:var(--color-success);">1.0000</span>
+                            <span class="text-muted" style="font-size:0.7rem;">Zero false positives</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="text-muted" style="font-size:0.75rem;">RECALL</span>
+                            <span class="metric-val font-mono" style="color:var(--color-success);">1.0000</span>
+                            <span class="text-muted" style="font-size:0.7rem;">All C2 attacks detected</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="text-muted" style="font-size:0.75rem;">F1-SCORE</span>
+                            <span class="metric-val font-mono" style="color:var(--color-success);">1.0000</span>
+                            <span class="text-muted" style="font-size:0.7rem;">Optimal harmonic mean</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="text-muted" style="font-size:0.75rem;">MEAN MITIGATION TIME</span>
+                            <span class="metric-val font-mono">1.24s</span>
+                            <span class="text-muted" style="font-size:0.7rem;">Sub-2 second response</span>
+                        </div>
                     </div>
+                    <p class="text-muted" style="font-size:0.75rem; border-top:1px solid var(--border-color); padding-top:0.75rem; margin-top:0.5rem;">
+                        <strong>Detection Processing Latency:</strong> Sub-millisecond response time across all evaluated scenarios. No false positives across the 20 evaluated benign/baseline Web3 executions.
+                    </p>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Full Run Detail Modal -->
-    <div id="run-modal" class="modal-backdrop hidden">
-        <div class="modal-dialog">
-            <button id="modal-close" class="btn btn-secondary btn-sm" style="position: absolute; top: 1rem; right: 1rem;">✕ Close</button>
-            <div id="modal-content">
-                <!-- Populated by App.openRunDetail -->
-            </div>
-        </div>
-    </div>
+    <!-- Live Security Alert Pop-Up Notification Container -->
+    <div id="live-alert-toast-container" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;display:flex;flex-direction:column;gap:0.75rem;max-width:440px;pointer-events:none;"></div>
 
-    <!-- Scripts (Pure Vanilla ES6, strictly offline) -->
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/charts.js"></script>
-    <script src="/static/js/navigation.js"></script>
-    <script src="/static/js/main.js"></script>
+    <!-- Scripts -->
+    <script src="static/js/api.js"></script>
+    <script src="static/js/navigation.js"></script>
+    <script src="static/js/main.js"></script>
 </body>
 </html>

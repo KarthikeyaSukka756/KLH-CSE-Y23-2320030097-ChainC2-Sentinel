@@ -260,17 +260,21 @@ class LocalRpcClient:
 
     def __init__(
         self,
-        rpc_url: str = DEFAULT_RPC_URL,
+        rpc_url: Optional[str] = None,
         default_sender: str = DEFAULT_DEPLOYER,
         timeout: float = 8.0,
         expected_chain_id: Optional[str] = None,
         network: str = "localhost",
     ) -> None:
-        self.rpc_url = rpc_url
+        self.network = network.strip().lower()
+        if rpc_url is not None:
+            self.rpc_url = rpc_url
+        else:
+            net_cfg = get_network_config(self.network)
+            self.rpc_url = net_cfg.rpc_url if net_cfg else DEFAULT_RPC_URL
         self.default_sender = default_sender
         self.timeout = timeout
         self.expected_chain_id = expected_chain_id
-        self.network = network.strip().lower()
         self._request_id = 1
 
     def _next_id(self) -> int:
@@ -445,28 +449,79 @@ class LocalRpcClient:
             )
 
         tx_hash = data_resp.get("result")
+        if not tx_hash or not isinstance(tx_hash, str) or not tx_hash.startswith("0x"):
+            err_msg = f"Invalid or missing transaction hash in RPC response: {data_resp}"
+            duration_ms = (time.perf_counter() - t0) * 1000.0
+            return RpcTxResult(
+                success=False,
+                status="error",
+                tx_hash=None,
+                block_number=None,
+                gas_used=None,
+                sender=sender,
+                to=to,
+                error_message=err_msg,
+                duration_ms=duration_ms,
+                request_params=tx_params,
+                response_result=data_resp,
+            )
+
         receipt = self.get_transaction_receipt(tx_hash)
         duration_ms = (time.perf_counter() - t0) * 1000.0
 
         if not receipt:
+            err_msg = f"Transaction receipt unconfirmed/timed out for tx_hash: {tx_hash}"
             return RpcTxResult(
-                success=True,
-                status="success",
+                success=False,
+                status="unconfirmed",
                 tx_hash=tx_hash,
                 block_number=None,
                 gas_used=None,
                 sender=sender,
                 to=to,
+                error_message=err_msg,
                 duration_ms=duration_ms,
                 request_params=tx_params,
-                response_result={"tx_hash": tx_hash},
+                response_result={"tx_hash": tx_hash, "error": err_msg},
+            )
+
+        if not isinstance(receipt, dict):
+            err_msg = f"Malformed transaction receipt returned for tx_hash: {tx_hash}"
+            return RpcTxResult(
+                success=False,
+                status="error",
+                tx_hash=tx_hash,
+                block_number=None,
+                gas_used=None,
+                sender=sender,
+                to=to,
+                error_message=err_msg,
+                duration_ms=duration_ms,
+                request_params=tx_params,
+                response_result={"tx_hash": tx_hash, "receipt": receipt, "error": err_msg},
             )
 
         receipt_status = receipt.get("status")
         tx_success = receipt_status in ("0x1", 1, True, "1")
-        block_num = int(receipt["blockNumber"], 16) if "blockNumber" in receipt and receipt["blockNumber"] else None
-        gas_used = int(receipt["gasUsed"], 16) if "gasUsed" in receipt and receipt["gasUsed"] else None
+        block_num = None
+        if "blockNumber" in receipt and receipt["blockNumber"] is not None:
+            try:
+                bn = receipt["blockNumber"]
+                block_num = int(bn, 16) if isinstance(bn, str) and bn.startswith("0x") else int(bn)
+            except (ValueError, TypeError):
+                block_num = None
+
+        gas_used = None
+        if "gasUsed" in receipt and receipt["gasUsed"] is not None:
+            try:
+                gu = receipt["gasUsed"]
+                gas_used = int(gu, 16) if isinstance(gu, str) and gu.startswith("0x") else int(gu)
+            except (ValueError, TypeError):
+                gas_used = None
+
         logs = receipt.get("logs", [])
+        if not isinstance(logs, list):
+            logs = []
 
         return RpcTxResult(
             success=tx_success,
@@ -477,8 +532,8 @@ class LocalRpcClient:
             sender=sender,
             to=to,
             logs=logs,
-            receipt_status=receipt_status,
-            error_message=None if tx_success else "Transaction reverted on-chain (status 0x0)",
+            receipt_status=str(receipt_status) if receipt_status is not None else None,
+            error_message=None if tx_success else f"Transaction reverted on-chain (status {receipt_status})",
             duration_ms=duration_ms,
             request_params=tx_params,
             response_result={"tx_hash": tx_hash, "receipt": receipt},
@@ -545,5 +600,87 @@ class LocalRpcClient:
         if "error" in data:
             raise RuntimeError(f"eth_getCode RPC error: {data['error']}")
         return data.get("result", "0x")
+
+    def eth_block_number(self) -> int:
+        """Fetch the latest mined block number via eth_blockNumber."""
+        req_payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_blockNumber",
+            "params": [],
+            "id": self._next_id(),
+        }
+        resp = requests.post(self.rpc_url, json=req_payload, timeout=self.timeout)
+        data = resp.json()
+        if "error" in data:
+            raise RuntimeError(f"eth_blockNumber RPC error: {data['error']}")
+        result = data.get("result")
+        if not result:
+            raise RuntimeError("Empty result in eth_blockNumber response")
+        return int(result, 16) if isinstance(result, str) and result.startswith("0x") else int(result)
+
+    def eth_get_block_by_number(
+        self,
+        block_num: Union[int, str],
+        full_transactions: bool = True,
+    ) -> Optional[dict[str, Any]]:
+        """Fetch block metadata and transactions by block number via eth_getBlockByNumber."""
+        tag = hex(block_num) if isinstance(block_num, int) else block_num
+        req_payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_getBlockByNumber",
+            "params": [tag, full_transactions],
+            "id": self._next_id(),
+        }
+        resp = requests.post(self.rpc_url, json=req_payload, timeout=self.timeout)
+        data = resp.json()
+        if "error" in data:
+            raise RuntimeError(f"eth_getBlockByNumber RPC error: {data['error']}")
+        return data.get("result")
+
+    def eth_get_transaction_by_hash(self, tx_hash: str) -> Optional[dict[str, Any]]:
+        """Fetch transaction details by hash via eth_getTransactionByHash."""
+        req_payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionByHash",
+            "params": [tx_hash],
+            "id": self._next_id(),
+        }
+        resp = requests.post(self.rpc_url, json=req_payload, timeout=self.timeout)
+        data = resp.json()
+        if "error" in data:
+            raise RuntimeError(f"eth_getTransactionByHash RPC error: {data['error']}")
+        return data.get("result")
+
+    def eth_get_logs(
+        self,
+        from_block: Union[int, str] = "latest",
+        to_block: Union[int, str] = "latest",
+        address: Optional[str] = None,
+        topics: Optional[list[Any]] = None,
+    ) -> list[dict[str, Any]]:
+        """Fetch event logs via eth_getLogs."""
+        from_tag = hex(from_block) if isinstance(from_block, int) else from_block
+        to_tag = hex(to_block) if isinstance(to_block, int) else to_block
+        filter_params: dict[str, Any] = {
+            "fromBlock": from_tag,
+            "toBlock": to_tag,
+        }
+        if address:
+            filter_params["address"] = address
+        if topics:
+            filter_params["topics"] = topics
+
+        req_payload = {
+            "jsonrpc": "2.0",
+            "method": "eth_getLogs",
+            "params": [filter_params],
+            "id": self._next_id(),
+        }
+        resp = requests.post(self.rpc_url, json=req_payload, timeout=self.timeout)
+        data = resp.json()
+        if "error" in data:
+            raise RuntimeError(f"eth_getLogs RPC error: {data['error']}")
+        return data.get("result", [])
+
 
 

@@ -1,0 +1,29 @@
+{
+  "client": {
+    "source": "client",
+    "ignore": [
+      "node_modules",
+      ".git",
+      ".env"
+    ]
+  },
+  "appsail": [
+    {
+      "name": "chainc2-sentinel-service",
+      "source": "appsail"
+    }
+  ],
+  "functions": {
+    "source": "functions",
+    "targets": [
+      "sepolia_cron"
+    ],
+    "ignore": [
+      ".git",
+      "__pycache__",
+      "*.pyc",
+      ".env"
+    ]
+  }
+}
+

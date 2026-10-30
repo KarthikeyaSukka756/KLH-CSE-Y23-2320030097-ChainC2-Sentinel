@@ -61,8 +61,10 @@ class EvidenceSnapshotHandler(BaseMitigationHandler, BaseEvidencePreserver):
 
         # Compile factual evidence bundle (strictly zero credentials or secrets)
         bundle: dict[str, Any] = {
+            "schema_version": "2.1.0",
             "evidence_bundle_id": generate_event_id(),
             "preserved_at": datetime.now(timezone.utc).isoformat(),
+            "provenance_type": "SIMULATED_LABORATORY_EVENT",
             "correlation_id": corr_id,
             "run_id": detection_result.run_id,
             "scenario_id": detection_result.scenario_id,
@@ -75,6 +77,14 @@ class EvidenceSnapshotHandler(BaseMitigationHandler, BaseEvidencePreserver):
             "evidence_details": detection_result.evidence,
             "explanation": detection_result.explanation,
             "stages_observed": detection_result.observed_stages,
+            "blockchain_receipt_verification": {
+                "verified": False,
+                "reason": "Sepolia contract unconfigured ($0 spending bound); lab pipeline simulation",
+            },
+            "verification_limitations": (
+                "Laboratory detection evidence snapshot under $0 Sepolia testnet policy. "
+                "Defensive containment operates strictly within isolated Python process space."
+            ),
             "sequence_summary": {
                 "start_time": sequence.start_time.isoformat() if sequence else None,
                 "end_time": sequence.end_time.isoformat() if sequence else None,
@@ -116,13 +126,23 @@ class EvidenceSnapshotHandler(BaseMitigationHandler, BaseEvidencePreserver):
         target_file = self.output_dir / f"evidence_{corr_id}_{timestamp_str}.json"
 
         bundle = {
+            "schema_version": "2.1.0",
             "evidence_bundle_id": generate_event_id(),
             "preserved_at": datetime.now(timezone.utc).isoformat(),
+            "provenance_type": "SIMULATED_LABORATORY_EVENT",
             "correlation_id": corr_id,
             "run_id": action.parameters.get("run_id"),
             "rule_id": action.parameters.get("rule_id", "RULE-CHAINC2-001"),
             "matched_conditions": action.parameters.get("matched_conditions", []),
             "action_id": action.action_id,
+            "blockchain_receipt_verification": {
+                "verified": False,
+                "reason": "Sepolia contract unconfigured ($0 spending bound); lab pipeline simulation",
+            },
+            "verification_limitations": (
+                "Laboratory detection evidence snapshot under $0 Sepolia testnet policy. "
+                "Defensive containment operates strictly within isolated Python process space."
+            ),
         }
         content_bytes = json.dumps(bundle, indent=2).encode("utf-8")
         bundle["sha256_checksum"] = hashlib.sha256(content_bytes).hexdigest()
@@ -138,7 +158,7 @@ class EvidenceSnapshotHandler(BaseMitigationHandler, BaseEvidencePreserver):
         return True
 
     def verify(self, action: MitigationAction) -> bool:
-        """Verify that the evidence snapshot exists on disk and is non-empty.
+        """Verify that the evidence snapshot exists on disk, is non-empty, and has valid SHA-256 integrity.
 
         Args:
             action: The executed mitigation action.
@@ -153,15 +173,58 @@ class EvidenceSnapshotHandler(BaseMitigationHandler, BaseEvidencePreserver):
             return False
 
         path = Path(snapshot_path_str)
-        if not path.exists() or path.stat().st_size == 0:
+        if not path.exists():
             action.status = MitigationStatus.FAILED
-            action.verification_details = f"Snapshot file not found or empty at {path}"
+            action.verification_details = f"Snapshot file not found on disk at {path}"
+            return False
+
+        if path.stat().st_size == 0:
+            action.status = MitigationStatus.FAILED
+            action.verification_details = f"Snapshot file is empty (0 bytes) at {path}"
+            return False
+
+        # Independent JSON and SHA-256 integrity recomputation
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                bundle_data = json.load(f)
+        except Exception as e:
+            action.status = MitigationStatus.FAILED
+            action.verification_details = f"Snapshot file contains invalid or corrupted JSON: {type(e).__name__}: {e}"
+            return False
+
+        if "sha256_checksum" not in bundle_data:
+            action.status = MitigationStatus.FAILED
+            action.verification_details = "Snapshot file is missing mandatory 'sha256_checksum' field"
+            return False
+
+        stored_checksum = bundle_data.pop("sha256_checksum")
+        recomputed_checksum = hashlib.sha256(json.dumps(bundle_data, indent=2).encode("utf-8")).hexdigest()
+
+        if recomputed_checksum != stored_checksum:
+            action.status = MitigationStatus.FAILED
+            action.verification_details = (
+                f"Cryptographic integrity failure: recomputed SHA-256 digest ({recomputed_checksum[:12]}...) "
+                f"does not match bundle checksum ({stored_checksum[:12]}...)"
+            )
+            return False
+
+        recorded_checksum = action.parameters.get("sha256_checksum")
+        if recorded_checksum and recorded_checksum != stored_checksum:
+            action.status = MitigationStatus.FAILED
+            action.verification_details = (
+                f"Action parameter checksum mismatch: recorded {recorded_checksum[:12]}... "
+                f"vs bundle {stored_checksum[:12]}..."
+            )
             return False
 
         action.status = MitigationStatus.VERIFIED
         action.verification_timestamp = datetime.now(timezone.utc)
-        action.verification_details = f"Verified immutable evidence bundle exists at {path.name} ({path.stat().st_size} bytes)"
-        logger.info("EvidenceSnapshotHandler: Verified snapshot %s", path.name)
+        action.verification_details = (
+            f"Verified immutable evidence bundle exists at {path.name} "
+            f"({path.stat().st_size} bytes, SHA-256: {stored_checksum[:16]}..., "
+            f"storage: local container disk / ephemeral across cold restarts)"
+        )
+        logger.info("EvidenceSnapshotHandler: Verified snapshot %s with SHA-256 integrity", path.name)
         return True
 
     def rollback(self, action: MitigationAction) -> bool:

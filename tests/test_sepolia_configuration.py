@@ -185,6 +185,7 @@ class TestSepoliaConfigurationIsolation:
         """Connected local node matching hardhat registry resolves addresses cleanly."""
         client = MagicMock()
         client.get_chain_id.return_value = "31337"
+        client.eth_get_code.return_value = "0x60806040"
         addresses = verify_rpc_and_registry_alignment(client, "hardhat")
         assert addresses["C2DataStore"] == "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 
@@ -342,6 +343,7 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
         runner = ScenarioRunner(network="localhost")
         aligned_client = MagicMock()
         aligned_client.get_chain_id.return_value = "31337"
+        aligned_client.eth_get_code.return_value = "0x60806040"
 
         # Validate directly
         addrs1 = runner.validate_live_rpc_alignment(aligned_client)
@@ -385,6 +387,7 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
 
         aligned_client = MagicMock()
         aligned_client.get_chain_id.return_value = "31337"
+        aligned_client.eth_get_code.return_value = "0x60806040"
 
         validated = runner.validate_live_rpc_alignment(aligned_client)
         assert validated["BenignDAppContract"] == new_addr
@@ -407,6 +410,7 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
         runner = ScenarioRunner(network="localhost", deployment_path=str(reg_file))
         aligned_client = MagicMock()
         aligned_client.get_chain_id.return_value = "31337"
+        aligned_client.eth_get_code.return_value = "0x60806040"
 
         runner.validate_live_rpc_alignment(aligned_client)
 
@@ -424,6 +428,7 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
         runner = ScenarioRunner(network="localhost")
         aligned_client = MagicMock()
         aligned_client.get_chain_id.return_value = "31337"
+        aligned_client.eth_get_code.return_value = "0x60806040"
         runner.validate_live_rpc_alignment(aligned_client)
 
         failing_client = MagicMock()
@@ -439,10 +444,12 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
         client_a = MagicMock()
         client_a.rpc_url = "http://127.0.0.1:8546"
         client_a.get_chain_id.return_value = "31337"
+        client_a.eth_get_code.return_value = "0x60806040"
 
         client_b = MagicMock()
         client_b.rpc_url = "http://127.0.0.1:8547"
         client_b.get_chain_id.return_value = "31337"
+        client_b.eth_get_code.return_value = "0x60806040"
 
         runner.validate_live_rpc_alignment(client_a)
         assert client_a.get_chain_id.call_count == 1
@@ -454,6 +461,7 @@ class TestScenarioRunnerNetworkAndRegistryEnforcement:
         """Scenario execution entry points propagate the exact validated RPC client instance."""
         injected_client = MagicMock()
         injected_client.get_chain_id.return_value = "31337"
+        injected_client.eth_get_code.return_value = "0x60806040"
 
         runner = ScenarioRunner(network="localhost", rpc_client=injected_client)
 

@@ -103,6 +103,7 @@ class DefenseExecutor:
 
         executed_count = 0
         verified_count = 0
+        unverifiable_count = 0
         failed_count = 0
 
         # Execute actions sequentially in deterministic order
@@ -169,27 +170,48 @@ class DefenseExecutor:
                 })
                 continue
 
-            verified_count += 1
-            audit_telemetry.append({
-                "action_id": action.action_id,
-                "type": action.mitigation_type.value,
-                "event": "verified",
-                "details": action.verification_details,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            if action.status == MitigationStatus.UNVERIFIABLE:
+                unverifiable_count += 1
+                audit_telemetry.append({
+                    "action_id": action.action_id,
+                    "type": action.mitigation_type.value,
+                    "event": "unverifiable",
+                    "details": action.verification_details,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+            else:
+                verified_count += 1
+                audit_telemetry.append({
+                    "action_id": action.action_id,
+                    "type": action.mitigation_type.value,
+                    "event": "verified",
+                    "details": action.verification_details,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
 
-        overall_success = (failed_count == 0) and (verified_count == len(plan.actions))
-        plan.status = DefensePlanStatus.VERIFIED if overall_success else DefensePlanStatus.FAILED
+        overall_success = (failed_count == 0)
+        if failed_count > 0:
+            plan.status = DefensePlanStatus.FAILED
+        elif unverifiable_count > 0:
+            if verified_count > 0:
+                plan.status = DefensePlanStatus.PARTIALLY_VERIFIED
+            else:
+                plan.status = DefensePlanStatus.UNVERIFIABLE
+        elif verified_count == len(plan.actions):
+            plan.status = DefensePlanStatus.VERIFIED
+        else:
+            plan.status = DefensePlanStatus.EXECUTED
 
         perf_elapsed_ms = (time.perf_counter() - perf_start) * 1000.0
         end_wall = datetime.now(timezone.utc)
 
         logger.info(
-            "DefenseExecutor: Plan %s finished with status %s (%d executed, %d verified, %d failed in %.2fms)",
+            "DefenseExecutor: Plan %s finished with status %s (%d executed, %d verified, %d unverifiable, %d failed in %.2fms)",
             plan.plan_id,
             plan.status.value,
             executed_count,
             verified_count,
+            unverifiable_count,
             failed_count,
             perf_elapsed_ms,
         )
@@ -200,6 +222,7 @@ class DefenseExecutor:
             overall_success=overall_success,
             actions_executed=executed_count,
             actions_verified=verified_count,
+            actions_unverifiable=unverifiable_count,
             actions_failed=failed_count,
             started_at=start_wall,
             completed_at=end_wall,

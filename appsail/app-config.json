@@ -1,0 +1,15 @@
+{
+  "command": "python3 -u appsail/run_appsail.py",
+  "buildPath": "..",
+  "stack": "python_3_11",
+  "env_variables": {
+    "NETWORK": "sepolia",
+    "CHAINC2_PRODUCTION": "0",
+    "PYTHONUNBUFFERED": "1",
+    "SEPOLIA_CHAIN_ID": "11155111",
+    "CHAINC2_AUTO_START_MONITOR": "1",
+    "CHAINC2_AUTO_START_GENERATOR": "1",
+    "CHAINC2_GENERATOR_MAX_CYCLES": "4"
+  },
+  "memory": 512
+}

@@ -268,6 +268,13 @@ class TestBaselinePreservation:
             assert len(dp372["planned_runs"]) == 372
 
 
+def _make_mock_runner() -> ScenarioRunner:
+    mock_client = MagicMock()
+    mock_client.get_chain_id.return_value = "31337"
+    mock_client.eth_get_code.return_value = "0x60806040"
+    return ScenarioRunner(network="localhost", rpc_client=mock_client)
+
+
 @pytest.mark.unit
 class TestDetectionLatencyMeasurementAndAggregation:
     """Validates detection-latency measurement fidelity, missing-latency distinction, and unbiased aggregation."""
@@ -289,7 +296,7 @@ class TestDetectionLatencyMeasurementAndAggregation:
             details={"execution_status": "SUCCESS"},
         )
 
-        runner = ScenarioRunner()
+        runner = _make_mock_runner()
         with patch("src.scenarios.runner.BenignWeb3Scenario.run", return_value=mock_result):
             _, record = runner.run_variant("A01")
 
@@ -311,7 +318,7 @@ class TestDetectionLatencyMeasurementAndAggregation:
             details={"execution_status": "SUCCESS"},
         )
 
-        runner = ScenarioRunner()
+        runner = _make_mock_runner()
         with patch("src.scenarios.runner.BenignWeb3Scenario.run", return_value=mock_result):
             _, record = runner.run_variant("A01")
 
@@ -344,7 +351,7 @@ class TestDetectionLatencyMeasurementAndAggregation:
             },
         )
 
-        runner = ScenarioRunner()
+        runner = _make_mock_runner()
         with patch("src.scenarios.runner.SyntheticC2Scenario.run", return_value=mock_result):
             _, record = runner.run_variant("B09")
 
@@ -370,7 +377,7 @@ class TestDetectionLatencyMeasurementAndAggregation:
             details={"execution_status": "SUCCESS"},
         )
 
-        runner = ScenarioRunner()
+        runner = _make_mock_runner()
         with patch("src.scenarios.runner.BenignWeb3Scenario.run", return_value=mock_result):
             _, record = runner.run_variant("A01", evaluate_detection=False)
 

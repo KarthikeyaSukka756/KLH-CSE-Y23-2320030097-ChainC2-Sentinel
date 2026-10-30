@@ -72,13 +72,63 @@ class TestSyntheticC2Payload:
                 )
 
 
+from unittest.mock import MagicMock
+from src.blockchain.rpc_client import RpcCallResult, RpcTxResult, encode_string
+
+
+def _create_test_rpc_client(get_beacon_url=None):
+    mock = MagicMock()
+    mock.network = "localhost"
+    mock.expected_chain_id = "31337"
+    mock.default_sender = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    mock.get_chain_id.return_value = "31337"
+    mock.eth_get_code.return_value = "0x60806040"
+
+    def _eth_call(to, data):
+        if "4f5063c4" in str(data):
+            target = get_beacon_url() if callable(get_beacon_url) else (get_beacon_url or "http://127.0.0.1:8080/beacon")
+            payload = SyntheticC2Payload(
+                command="BEACON",
+                target=target,
+            ).to_blockchain_string()
+            return RpcCallResult(
+                success=True,
+                status="success",
+                result="0x" + encode_string(payload),
+                error_message=None,
+                duration_ms=1.0,
+                request_params={"to": to, "data": data},
+            )
+        return RpcCallResult(
+            success=True,
+            status="success",
+            result="0x0000000000000000000000000000000000000000000000000000000000000001",
+            error_message=None,
+            duration_ms=1.0,
+            request_params={"to": to, "data": data},
+        )
+
+    mock.eth_call.side_effect = _eth_call
+    mock.eth_send_transaction.return_value = RpcTxResult(
+        success=True,
+        status="success",
+        tx_hash="0x4a7e9b3c2d1f0e8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a",
+        block_number=101,
+        gas_used=21000,
+        sender=mock.default_sender,
+        to="0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        response_result={"receipt": {"status": "0x1"}},
+    )
+    return mock
+
+
 @pytest.mark.unit
 class TestBenignWeb3Scenario:
     """Tests for Scenario A (Benign Web3 Activity)."""
 
     def test_scenario_a_execution_and_negative_control(self):
         """Scenario A produces endpoint, RPC, and BenignDApp events, and ZERO network events."""
-        scenario = BenignWeb3Scenario(run_id="run-benign-001")
+        scenario = BenignWeb3Scenario(run_id="run-benign-001", rpc_client=_create_test_rpc_client())
         result = scenario.run()
 
         assert result.success is True
@@ -116,6 +166,7 @@ class TestSyntheticC2Scenario:
             scenario = SyntheticC2Scenario(
                 target_server=target_srv,
                 run_id="run-c2-001",
+                rpc_client=_create_test_rpc_client(lambda: target_srv.beacon_url),
             )
             result = scenario.run()
 
@@ -152,7 +203,10 @@ class TestSyntheticC2Scenario:
 
     def test_scenario_b_internal_managed_server(self):
         """Scenario B can self-manage an ephemeral local HTTP target if none is supplied."""
-        scenario = SyntheticC2Scenario(run_id="run-c2-self-managed")
+        scenario = SyntheticC2Scenario(
+            run_id="run-c2-self-managed",
+            rpc_client=_create_test_rpc_client(lambda: scenario.target_server.beacon_url if scenario.target_server else "http://127.0.0.1:8080/beacon"),
+        )
         result = scenario.run()
 
         assert result.success is True
@@ -196,10 +250,11 @@ class TestScenarioRunner:
     def test_run_all_with_jsonl_persistence(self, tmp_path: Path):
         """ScenarioRunner runs all three scenarios and persists valid events to JSONL."""
         output_file = str(tmp_path / "events.jsonl")
-        runner = ScenarioRunner(output_path=output_file)
 
         with LocalHttpTargetServer(host="127.0.0.1", port=0) as target_srv:
-            results = runner.run_all(target_server=target_srv)
+            mock_rpc = _create_test_rpc_client(lambda: target_srv.beacon_url)
+            runner = ScenarioRunner(output_path=output_file, rpc_client=mock_rpc)
+            results = runner.run_all(target_server=target_srv, rpc_client=mock_rpc)
 
         assert len(results) == 3
         summary = runner.summarize(results)
