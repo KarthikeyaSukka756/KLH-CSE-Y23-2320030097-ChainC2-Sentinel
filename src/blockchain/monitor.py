@@ -70,7 +70,7 @@ class SepoliaMonitor:
         self,
         rpc_client: Optional[LocalRpcClient] = None,
         repo_root: Optional[Path] = None,
-        max_buffer_size: int = 500,
+        max_buffer_size: Optional[int] = None,
     ) -> None:
         self.repo_root = repo_root or Path(__file__).resolve().parent.parent.parent
         self.rpc_client = rpc_client or LocalRpcClient(network="sepolia")
@@ -82,6 +82,7 @@ class SepoliaMonitor:
         # Observation State
         self.observed_transactions: list[dict[str, Any]] = []
         self._tx_hashes_seen: set[str] = set()
+        self.cumulative_tx_count: int = 0
         self.latest_block: Optional[int] = None
         self.last_poll_time: Optional[datetime] = None
         self.last_poll_error: Optional[str] = None
@@ -206,6 +207,9 @@ class SepoliaMonitor:
             try:
                 data = json.loads(cursor_file.read_text(encoding="utf-8"))
                 self.last_ingested_block = data.get("last_ingested_block", self.last_ingested_block)
+                c_tx = data.get("total_observed_transactions")
+                if isinstance(c_tx, int) and c_tx > self.cumulative_tx_count:
+                    self.cumulative_tx_count = c_tx
             except Exception as e:
                 logger.debug("Could not load cached Sepolia cursor: %s", e)
 
@@ -217,8 +221,13 @@ class SepoliaMonitor:
                 if c_block is not None:
                     if self.last_ingested_block is None or c_block > self.last_ingested_block:
                         self.last_ingested_block = c_block
+                c_tx = cdata.get("total_observed_transactions")
+                if isinstance(c_tx, int) and c_tx > self.cumulative_tx_count:
+                    self.cumulative_tx_count = c_tx
             except Exception as e:
                 logger.debug("Could not load cached cron cursor: %s", e)
+
+        self.cumulative_tx_count = max(self.cumulative_tx_count, len(self.observed_transactions))
 
     def _persist_cached_state(self) -> None:
         cache_dir = self._get_cache_dir()
@@ -232,7 +241,7 @@ class SepoliaMonitor:
                     "chainId": self.chain_id,
                     "latest_block": self.latest_block,
                     "updated_at": now_iso,
-                    "transactions": self.observed_transactions[-self.max_buffer_size:],
+                    "transactions": self.observed_transactions[-self.max_buffer_size:] if self.max_buffer_size else self.observed_transactions,
                 }, f, indent=2)
         except Exception as e:
             logger.debug("Failed to persist Sepolia transactions: %s", e)
@@ -244,7 +253,7 @@ class SepoliaMonitor:
                     "network": "sepolia",
                     "chainId": self.chain_id,
                     "updated_at": now_iso,
-                    "alerts": self.alerts[:self.max_buffer_size],
+                    "alerts": self.alerts[:self.max_buffer_size] if self.max_buffer_size else self.alerts,
                 }, f, indent=2)
         except Exception as e:
             logger.debug("Failed to persist Sepolia alerts: %s", e)
@@ -256,7 +265,7 @@ class SepoliaMonitor:
                     "network": "sepolia",
                     "chainId": self.chain_id,
                     "updated_at": now_iso,
-                    "experiments": self.experiment_records[:self.max_buffer_size],
+                    "experiments": self.experiment_records[:self.max_buffer_size] if self.max_buffer_size else self.experiment_records,
                 }, f, indent=2)
         except Exception as e:
             logger.debug("Failed to persist Sepolia experiments: %s", e)
@@ -268,7 +277,7 @@ class SepoliaMonitor:
                     "network": "sepolia",
                     "chainId": self.chain_id,
                     "updated_at": now_iso,
-                    "mitigations": self.mitigation_records[:self.max_buffer_size],
+                    "mitigations": self.mitigation_records[:self.max_buffer_size] if self.max_buffer_size else self.mitigation_records,
                 }, f, indent=2)
         except Exception as e:
             logger.debug("Failed to persist Sepolia mitigations: %s", e)
@@ -280,7 +289,7 @@ class SepoliaMonitor:
                     "network": "sepolia",
                     "chainId": self.chain_id,
                     "updated_at": now_iso,
-                    "investigations": self.investigations[:self.max_buffer_size],
+                    "investigations": self.investigations[:self.max_buffer_size] if self.max_buffer_size else self.investigations,
                 }, f, indent=2)
         except Exception as e:
             logger.debug("Failed to persist Sepolia investigations: %s", e)
@@ -296,7 +305,8 @@ class SepoliaMonitor:
                 "last_block_number": self.last_ingested_block,
                 "latest_block": self.latest_block,
                 "monitoring_lag_blocks": max(0, lag),
-                "total_observed_transactions": len(self.observed_transactions),
+                "total_observed_transactions": max(self.cumulative_tx_count, len(self.observed_transactions)),
+                "buffered_transactions_count": len(self.observed_transactions),
                 "last_poll_time": now_iso,
                 "updated_at": now_iso,
             }
@@ -407,7 +417,8 @@ class SepoliaMonitor:
             "last_poll_error": self.last_poll_error,
             "polling_errors_count": self.polling_errors_count,
             "rate_limit_count": self.rate_limit_count,
-            "total_observed_transactions": len(self.observed_transactions),
+            "total_observed_transactions": max(self.cumulative_tx_count, len(self.observed_transactions)),
+            "buffered_transactions_count": len(self.observed_transactions),
             "total_telemetry_events_ingested": self.total_telemetry_events_ingested,
             "last_telemetry_event_time": self.last_telemetry_event_time.isoformat() if self.last_telemetry_event_time else None,
             "ingestion_diagnostics": dict(self.ingestion_diagnostics),
@@ -508,6 +519,7 @@ class SepoliaMonitor:
 
                         self.observed_transactions.insert(0, record)
                         self._tx_hashes_seen.add(tx_hash)
+                        self.cumulative_tx_count += 1
                         newly_observed.append(record)
 
                     # Only record success after all transactions for this block are recorded
@@ -523,8 +535,8 @@ class SepoliaMonitor:
             if last_consecutive_success is not None:
                 self.last_ingested_block = max(self.last_ingested_block or 0, last_consecutive_success)
 
-            # Cap in-memory buffer
-            if len(self.observed_transactions) > self.max_buffer_size:
+            # Cap in-memory buffer only if max_buffer_size is explicitly configured
+            if self.max_buffer_size and len(self.observed_transactions) > self.max_buffer_size:
                 self.observed_transactions = self.observed_transactions[:self.max_buffer_size]
 
             self._persist_cached_state()

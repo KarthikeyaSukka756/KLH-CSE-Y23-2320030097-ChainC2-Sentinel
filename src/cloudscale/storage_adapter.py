@@ -122,7 +122,7 @@ class CatalystStorageAdapter:
             return False  # Already exists (idempotent)
 
         tx_list.insert(0, tx_record)
-        existing["transactions"] = tx_list[:500]  # Cap buffer
+        existing["transactions"] = tx_list
         existing["updated_at"] = datetime.now(timezone.utc).isoformat()
         tx_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 

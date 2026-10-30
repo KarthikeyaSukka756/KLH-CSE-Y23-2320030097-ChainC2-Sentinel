@@ -29,6 +29,7 @@ class TestSepoliaMonitor(unittest.TestCase):
         self.monitor.last_poll_time = None
         self.monitor.observed_transactions = []
         self.monitor._tx_hashes_seen = set()
+        self.monitor.cumulative_tx_count = 0
 
     def test_sepolia_initialization_and_chain_id(self) -> None:
         """Verify monitor initializes with Sepolia chain ID 11155111 and correct network name."""
@@ -201,6 +202,32 @@ class TestSepoliaMonitor(unittest.TestCase):
         # Cursor MUST be 12014151 (the last contiguous success); it must NOT have skipped to 12014153
         self.assertEqual(self.monitor.last_ingested_block, 12014151)
         self.mock_rpc.eth_get_block_by_number.side_effect = None
+
+    def test_cumulative_observed_transactions_unbounded_by_buffer_cap(self) -> None:
+        """Verify total_observed_transactions tracks cumulative count even when in-memory buffer is capped."""
+        self.monitor.max_buffer_size = 3
+        self.monitor.observed_transactions = []
+        self.monitor._tx_hashes_seen = set()
+        self.monitor.cumulative_tx_count = 0
+
+        # Simulate block with 5 transactions
+        txs = [
+            {"hash": f"0x{i:064x}", "from": "0x1111", "to": "0x2222", "value": "0x1"}
+            for i in range(1, 6)
+        ]
+        self.mock_rpc.eth_get_block_by_number.return_value = {
+            "number": hex(12014160),
+            "timestamp": "0x66000000",
+            "transactions": txs,
+        }
+        self.monitor._ingest_blocks([12014160])
+
+        # Buffer should be capped to max_buffer_size (3)
+        self.assertEqual(len(self.monitor.observed_transactions), 3)
+        status = self.monitor.get_status_summary()
+        # Cumulative count must reflect all 5 ingested transactions
+        self.assertEqual(status["total_observed_transactions"], 5)
+        self.assertEqual(status["buffered_transactions_count"], 3)
 
     def test_cron_and_monitor_cursor_synchronization(self) -> None:
         """Verify SepoliaMonitor and CatalystStorageAdapter share synchronized cursor state."""

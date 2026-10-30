@@ -556,9 +556,10 @@ def create_app(
         """Retrieve observed Sepolia transactions with optional filter and limit."""
         ft = request.args.get("filter")
         try:
-            limit = min(int(request.args.get("limit", 100)), 500)
+            limit_arg = request.args.get("limit")
+            limit = int(limit_arg) if limit_arg else 1000
         except ValueError:
-            limit = 100
+            limit = 1000
         txs = sepolia_service.get_transactions(filter_type=ft, limit=limit)
         return jsonify({
             "total_returned": len(txs),
@@ -701,7 +702,8 @@ def create_app(
     @app.route("/api/alerts", methods=["GET"])
     def get_all_alerts():
         """Retrieve all alerts with optional limit and severity filter."""
-        limit = min(int(request.args.get("limit", 100)), 500)
+        limit_arg = request.args.get("limit")
+        limit = int(limit_arg) if limit_arg else 1000
         sev_filter = request.args.get("severity")
         alerts = sepolia_service.get_alerts(limit=limit)
         if sev_filter:
@@ -719,7 +721,8 @@ def create_app(
     @app.route("/api/investigations", methods=["GET"])
     def get_all_investigations():
         """Retrieve all forensic investigation records."""
-        limit = min(int(request.args.get("limit", 100)), 500)
+        limit_arg = request.args.get("limit")
+        limit = int(limit_arg) if limit_arg else 1000
         invs = sepolia_service.get_investigations(limit=limit)
         return jsonify({"investigations": invs, "total": len(invs)})
 
@@ -734,7 +737,8 @@ def create_app(
     @app.route("/api/mitigations", methods=["GET"])
     def get_all_mitigations():
         """Retrieve all defensive mitigation records."""
-        limit = min(int(request.args.get("limit", 100)), 500)
+        limit_arg = request.args.get("limit")
+        limit = int(limit_arg) if limit_arg else 1000
         mits = sepolia_service.get_mitigations(limit=limit)
         return jsonify({"mitigations": mits, "total": len(mits)})
 

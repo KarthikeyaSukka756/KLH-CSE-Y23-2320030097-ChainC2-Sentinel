@@ -189,7 +189,7 @@
                     </p>
 
                     <!-- Interactive On-Demand Scenarios -->
-                    <div style="margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div>
                         <div style="font-weight: 600; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--text-primary);">
                             🎯 On-Demand Scenario Triggers:
                         </div>
@@ -197,47 +197,6 @@
                             <button id="btn-sepolia-pos-c2" class="btn btn-danger btn-sm" title="Executes 4-layer synthetic C2 pattern (Endpoint + RPC + Contract + Network) triggering alert score 100.0">🚨 Run Scenario B: Synthetic C2</button>
                             <button id="btn-sepolia-benign" class="btn btn-secondary btn-sm" title="Executes benign Web3 contract read negative control (Score 0.0)">🛡️ Run Scenario A: Benign Web3</button>
                             <button id="btn-sepolia-dapp" class="btn btn-secondary btn-sm" title="Executes legitimate multi-step dApp workflow control (Score 25.0)">⚖️ Run Scenario C: Legitimate dApp</button>
-                        </div>
-                    </div>
-
-                    <!-- Dual Generator Modes Grid -->
-                    <div class="grid grid-2" style="gap: 1rem;">
-                        <!-- Mode 1: Step Generator -->
-                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                                <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-primary);">⏭ Step Generator (Single-Cycle)</span>
-                                <span class="badge badge-primary" style="font-size: 0.65rem;">ON-DEMAND</span>
-                            </div>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
-                                Executes exactly <strong>one scenario</strong> per request without spawning a background thread. Returns the execution run ID, scenario, and telemetry summary immediately.
-                            </p>
-                            <button id="btn-gen-step" class="btn btn-primary btn-sm" style="width: 100%; margin-bottom: 0.5rem;" title="Execute exactly one workload rotation step without starting a background thread">⏭ Execute Single Step Cycle</button>
-                            <div id="gen-step-result-box" style="display: none; font-size: 0.72rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 4px; border: 1px solid var(--border-color);">
-                                <div><strong>Run ID:</strong> <span class="font-mono" id="gen-step-run-id">—</span></div>
-                                <div><strong>Scenario:</strong> <span id="gen-step-scenario">—</span></div>
-                                <div><strong>Status:</strong> <span id="gen-step-status" class="badge badge-success" style="font-size:0.65rem;">—</span></div>
-                                <div><strong>Telemetry:</strong> <span id="gen-step-summary" class="text-muted">—</span></div>
-                            </div>
-                        </div>
-
-                        <!-- Mode 2: Background Generator -->
-                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                                <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-warning);">🔄 Background Generator (Bounded Daemon)</span>
-                                <span id="gen-bg-status" class="badge badge-neutral" style="font-size: 0.65rem;">STOPPED</span>
-                            </div>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
-                                Rotates scenarios sequentially at 25s intervals. Safely bounded by a maximum cycle limit (default: 4) to prevent runaway cloud compute.
-                            </p>
-                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
-                                <label for="gen-max-cycles" style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">Max Cycles:</label>
-                                <input type="number" id="gen-max-cycles" class="form-control" min="1" max="50" value="4" style="width: 75px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Bounded maximum cycle limit">
-                                <span id="gen-bg-cycles-text" style="font-size: 0.72rem; color: var(--text-muted);">Completed: <span id="gen-bg-cycles-count" class="font-mono">0</span></span>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button id="btn-gen-start" class="btn btn-secondary btn-sm" style="flex: 1;" title="Start bounded background generator daemon">▶ Start</button>
-                                <button id="btn-gen-stop" class="btn btn-secondary btn-sm" style="flex: 1;" title="Stop background generator daemon">⏹ Stop</button>
-                            </div>
                         </div>
                     </div>
                 </div>

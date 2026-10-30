@@ -108,7 +108,7 @@ class CatalystCronWorker:
                 self.storage_adapter.save_monitoring_cursor(
                     last_block_number=latest_network_block,
                     polled_at=cycle_timestamp,
-                    total_txs_observed=len(self.monitor.observed_transactions),
+                    total_txs_observed=max(self.monitor.cumulative_tx_count, len(self.monitor.observed_transactions)),
                 )
         except Exception as e:
             msg = f"Block polling encountered error: {e}"
